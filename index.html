@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>逆算学習計画メーカー（仮）</title>
+<style>
+  :root {
+    --primary: #3452c4;
+    --primary-dark: #24399a;
+    --primary-light: #eef1fd;
+    --bg: #f5f6fb;
+    --surface: #ffffff;
+    --text: #1c2033;
+    --text-sub: #6b7086;
+    --border: #e2e4f0;
+    --radius: 14px;
+    --warn-bg: #fff6e5;
+    --warn-border: #f0d38a;
+    --warn-text: #7a5a00;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header { padding: 36px 20px 20px; text-align: center; }
+  header h1 { font-size: 1.4rem; font-weight: 800; }
+  header p { font-size: .85rem; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 8px 16px 60px; }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label.field-label { display: block; font-size: .82rem; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; }
+
+  .seg { display: flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .seg button {
+    flex: 1; padding: 10px 8px; border: 0; background: var(--surface); color: var(--text);
+    font-size: .85rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .seg button + button { border-left: 1.5px solid var(--border); }
+  .seg button.active { background: var(--primary); color: #fff; }
+
+  input[type=text], input[type=number], input[type=date], select {
+    width: 100%; padding: 11px 12px; border-radius: 10px; border: 1.5px solid var(--border);
+    font-size: .95rem; font-family: inherit; background: var(--surface); color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid var(--primary-light); border-color: var(--primary); }
+
+  .subject-row {
+    display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .subject-row:last-child { border-bottom: 0; }
+  .subject-row .name { flex: 0 0 90px; font-size: .88rem; font-weight: 600; }
+  .subject-row .seg { flex: 1; }
+  .subject-row .seg button { padding: 8px 4px; font-size: .78rem; }
+
+  .btn-primary {
+    width: 100%; padding: 15px; border-radius: 12px; border: 0; background: var(--primary); color: #fff;
+    font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 4px;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary {
+    width: 100%; padding: 13px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--primary-dark); font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px;
+  }
+
+  .hint { font-size: .76rem; color: var(--text-sub); margin-top: 6px; line-height: 1.5; }
+
+  .hidden { display: none !important; }
+
+  .disclaimer {
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
+    border-radius: 10px; padding: 12px 14px; font-size: .8rem; line-height: 1.6; margin-bottom: 18px;
+  }
+
+  .result-header { text-align: center; margin-bottom: 20px; }
+  .result-header .school { font-size: .85rem; color: var(--text-sub); }
+  .result-header .title { font-size: 1.25rem; font-weight: 800; margin-top: 4px; }
+  .result-header .meta { font-size: .8rem; color: var(--text-sub); margin-top: 6px; }
+
+  .phase-card { border-left: 5px solid var(--primary); }
+  .phase-card .phase-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .phase-card .phase-name { font-size: 1.05rem; font-weight: 800; }
+  .phase-card .phase-weeks { font-size: .78rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 3px 10px; border-radius: 999px; }
+  .phase-card .phase-desc { font-size: .84rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 14px; }
+
+  .subject-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .subject-bar-row:last-child { margin-bottom: 0; }
+  .subject-bar-row .sname { flex: 0 0 78px; font-size: .8rem; font-weight: 600; }
+  .subject-bar-row .track { flex: 1; height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+  .subject-bar-row .fill { height: 100%; background: var(--primary); border-radius: 999px; }
+  .subject-bar-row .pct { flex: 0 0 34px; font-size: .76rem; text-align: right; color: var(--text-sub); }
+
+  .short-warning {
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
+    border-radius: 10px; padding: 14px; font-size: .85rem; line-height: 1.7; margin-bottom: 18px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>逆算学習計画メーカー（仮）</h1>
+  <p>志望試験・現在の学力・残り期間から、週単位の逆算学習計画を自動生成します</p>
+</header>
+
+<main>
+  <section id="screen-form">
+    <div class="card">
+      <h2>1. 志望試験</h2>
+      <div class="field">
+        <label class="field-label">試験タイプ</label>
+        <div class="seg" id="exam-type-seg">
+          <button type="button" data-val="general" class="active">一般受験</button>
+          <button type="button" data-val="henyu">医学部編入</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">志望校（任意・記録用）</label>
+        <input type="text" id="school-input" placeholder="例：〇〇大学医学部" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 残り期間</h2>
+      <div class="field">
+        <label class="field-label">入力方法</label>
+        <div class="seg" id="period-mode-seg">
+          <button type="button" data-val="date" class="active">試験日から計算</button>
+          <button type="button" data-val="weeks">週数を直接入力</button>
+        </div>
+      </div>
+      <div class="field" id="period-date-field">
+        <label class="field-label">試験日</label>
+        <input type="date" id="exam-date-input" />
+      </div>
+      <div class="field hidden" id="period-weeks-field">
+        <label class="field-label">残り週数</label>
+        <input type="number" id="weeks-input" min="1" max="104" placeholder="例：24" />
+      </div>
+      <div class="hint" id="period-hint"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. 現在の学力レベル</h2>
+      <div class="field">
+        <div class="seg" id="level-seg" style="flex-direction: column;">
+          <button type="button" data-val="foundation" class="active">基礎からやり直し</button>
+          <button type="button" data-val="uneven">ある程度できるが穴がある</button>
+          <button type="button" data-val="polish">仕上げ段階</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4. 得意・苦手科目</h2>
+      <div id="subject-list"></div>
+      <div class="hint">理科は対象外にすると計画から外れます。編入の場合は小論文・面接も含みます。</div>
+    </div>
+
+    <button class="btn-primary" id="btn-generate">学習計画を作成する</button>
+  </section>
+
+  <section id="screen-result" class="hidden">
+    <div class="disclaimer">本ツールが出す計画はあくまで目安であり、合格を保証するものではありません。参考情報としてご利用ください。</div>
+    <div class="result-header">
+      <div class="school" id="result-school"></div>
+      <div class="title" id="result-title"></div>
+      <div class="meta" id="result-meta"></div>
+    </div>
+    <div id="result-body"></div>
+    <button class="btn-secondary" id="btn-edit">条件を変えてもう一度</button>
+  </section>
+</main>
+
+<script>
+  // ── 状態 ──────────────────────────────────────────
+  const state = {
+    examType: 'general',   // general | henyu
+    school: '',
+    periodMode: 'date',    // date | weeks
+    examDate: '',
+    weeksDirect: null,
+    level: 'foundation',   // foundation | uneven | polish
+    subjects: {
+      english: 'normal',
+      math: 'normal',
+      bio: 'off',
+      chem: 'off',
+      phys: 'off',
+      essay: 'normal',
+      interview: 'normal',
+    },
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  const SUBJECT_META = {
+    english:   { label: '英語',   required: true },
+    math:      { label: '数学',   required: true },
+    bio:       { label: '生物',   required: false },
+    chem:      { label: '化学',   required: false },
+    phys:      { label: '物理',   required: false },
+    essay:     { label: '小論文', required: true, henyuOnly: true },
+    interview: { label: '面接',   required: true, henyuOnly: true },
+  };
+
+  // ── セグメントボタン共通ハンドラ ──────────────────────
+  function wireSeg(containerId, onChange) {
+    const el = $(containerId);
+    el.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        el.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        onChange(btn.dataset.val);
+      });
+    });
+  }
+
+  wireSeg('exam-type-seg', (val) => { state.examType = val; renderSubjectList(); });
+  wireSeg('period-mode-seg', (val) => {
+    state.periodMode = val;
+    $('period-date-field').classList.toggle('hidden', val !== 'date');
+    $('period-weeks-field').classList.toggle('hidden', val !== 'weeks');
+  });
+  wireSeg('level-seg', (val) => { state.level = val; });
+
+  $('school-input').addEventListener('input', (e) => { state.school = e.target.value; });
+  $('exam-date-input').addEventListener('change', (e) => {
+    state.examDate = e.target.value;
+    updatePeriodHint();
+  });
+  $('weeks-input').addEventListener('input', (e) => {
+    state.weeksDirect = parseInt(e.target.value, 10) || null;
+  });
+
+  function todayStr() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+  $('exam-date-input').min = todayStr();
+
+  function computeWeeksFromDate(dateStr) {
+    if (!dateStr) return null;
+    const exam = new Date(dateStr + 'T00:00:00');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((exam - now) / (1000 * 60 * 60 * 24));
+    return Math.max(1, Math.ceil(diffDays / 7));
+  }
+
+  function updatePeriodHint() {
+    if (state.periodMode === 'date' && state.examDate) {
+      const w = computeWeeksFromDate(state.examDate);
+      $('period-hint').textContent = `試験日まで約 ${w} 週間`;
+    } else {
+      $('period-hint').textContent = '';
+    }
+  }
+
+  function getTotalWeeks() {
+    if (state.periodMode === 'date') return computeWeeksFromDate(state.examDate);
+    return state.weeksDirect;
+  }
+
+  // ── 科目リスト描画 ──────────────────────────────────
+  function renderSubjectList() {
+    const isHenyu = state.examType === 'henyu';
+    const keys = Object.keys(SUBJECT_META).filter((k) => !SUBJECT_META[k].henyuOnly || isHenyu);
+    const wrap = $('subject-list');
+    wrap.innerHTML = '';
+    keys.forEach((key) => {
+      const meta = SUBJECT_META[key];
+      const row = document.createElement('div');
+      row.className = 'subject-row';
+      const options = meta.required
+        ? [['weak', '苦手'], ['normal', '普通'], ['strong', '得意']]
+        : [['off', '対象外'], ['weak', '苦手'], ['normal', '普通'], ['strong', '得意']];
+      row.innerHTML = `
+        <span class="name">${meta.label}</span>
+        <div class="seg" data-key="${key}">
+          ${options.map(([val, label]) => `<button type="button" data-val="${val}" class="${state.subjects[key] === val ? 'active' : ''}">${label}</button>`).join('')}
+        </div>`;
+      wrap.appendChild(row);
+      const seg = row.querySelector('.seg');
+      seg.querySelectorAll('button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          seg.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.subjects[key] = btn.dataset.val;
+        });
+      });
+    });
+    // 理科が全て「対象外」なら初期状態で生物・化学を「普通」にしておく（未選択で0科目になるのを避ける）
+    if (!isHenyu && state.subjects.bio === 'off' && state.subjects.chem === 'off' && state.subjects.phys === 'off') {
+      state.subjects.bio = 'normal';
+      state.subjects.chem = 'normal';
+      const wrapAgain = $('subject-list');
+      wrapAgain.querySelectorAll('.seg').forEach((seg) => {
+        const key = seg.dataset.key;
+        seg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.val === state.subjects[key]));
+      });
+    }
+  }
+  renderSubjectList();
+
+  // ── 逆算ロジック ──────────────────────────────────
+  const LEVEL_LABEL = { foundation: '基礎からやり直し', uneven: 'ある程度できるが穴がある', polish: '仕上げ段階' };
+
+  const BASE_RATIO = {
+    foundation: { found: 0.40, drill: 0.30, polish: 0.20, final: 0.10 },
+    uneven:     { found: 0.25, drill: 0.35, polish: 0.25, final: 0.15 },
+    polish:     { found: 0.10, drill: 0.30, polish: 0.35, final: 0.25 },
+  };
+
+  const PHASE_META = {
+    found:  { name: '基礎固め期',   desc: '教科書レベルの抜け・漏れを潰す期間。苦手科目を中心に、土台を作り直すことに時間を使う。' },
+    drill:  { name: '演習期',       desc: '基礎を土台に、問題演習量を増やして得点力をつける期間。苦手科目の比重は残しつつ、実戦形式の演習を増やす。' },
+    polish: { name: '総仕上げ期',   desc: '全科目のバランスを整え、過去問演習を本格化する期間。苦手・得意にかかわらず穴を残さない。' },
+    final:  { name: '直前期',       desc: '得意科目で確実に得点しつつ、苦手科目は最低限のコンディションを維持する期間。新しいことには手を広げない。' },
+};
+
+  // レベル×残り期間の長さで、基礎固め期の比率を圧縮し、演習・総仕上げ・直前に再配分する
+  function adjustRatioForWeeks(baseRatio, weeks) {
+    const r = { ...baseRatio };
+    if (weeks < 20) { r.found -= 0.05; r.drill += 0.05; }
+    if (weeks < 12) { r.found -= 0.05; r.polish += 0.05; }
+    if (weeks < 6)  { r.found -= 0.05; r.final += 0.05; }
+    const floor = weeks < 6 ? 0 : 0.05;
+    if (r.found < floor) {
+      const deficit = floor - r.found;
+      r.found = floor;
+      r.drill -= deficit; // 演習期から不足分を吸収
+    }
+    const sum = r.found + r.drill + r.polish + r.final;
+    return { found: r.found / sum, drill: r.drill / sum, polish: r.polish / sum, final: r.final / sum };
+  }
+
+  function weeksToPhases(ratio, totalWeeks) {
+    const raw = {
+      found: ratio.found * totalWeeks,
+      drill: ratio.drill * totalWeeks,
+      polish: ratio.polish * totalWeeks,
+      final: ratio.final * totalWeeks,
+    };
+    const floored = {};
+    let used = 0;
+    for (const k of ['found', 'drill', 'polish', 'final']) {
+      floored[k] = Math.max(k === 'final' ? 1 : 0, Math.floor(raw[k]));
+      used += floored[k];
+    }
+    // 端数を、最も比率が大きい演習期に寄せて帳尻を合わせる
+    let remainder = totalWeeks - used;
+    const order = ['drill', 'polish', 'found', 'final'];
+    let i = 0;
+    while (remainder > 0) {
+      floored[order[i % order.length]] += 1;
+      remainder -= 1;
+      i += 1;
+    }
+    while (remainder < 0) {
+      const k = order[i % order.length];
+      if (floored[k] > (k === 'final' ? 1 : 0)) { floored[k] -= 1; remainder += 1; }
+      i += 1;
+      if (i > 40) break; // 安全弁
+    }
+    return floored;
+  }
+
+  // 苦手/普通/得意 × フェーズごとの重み付けで、科目ごとの時間配分（%）を出す
+  const LEVEL_WEIGHT = { weak: 2, normal: 1, strong: 0.6 };
+  const PHASE_MULTIPLIER = {
+    found:  { weak: 1.3, normal: 1.0, strong: 0.7 },
+    drill:  { weak: 1.1, normal: 1.0, strong: 0.9 },
+    polish: { weak: 1.0, normal: 1.0, strong: 1.0 },
+    final:  { weak: 0.9, normal: 1.0, strong: 1.1 },
+  };
+
+  function activeSubjects() {
+    const isHenyu = state.examType === 'henyu';
+    return Object.keys(SUBJECT_META)
+      .filter((k) => !SUBJECT_META[k].henyuOnly || isHenyu)
+      .filter((k) => state.subjects[k] !== 'off')
+      .map((k) => ({ key: k, label: SUBJECT_META[k].label, level: state.subjects[k] }));
+  }
+
+  function subjectAllocationForPhase(phaseKey, subjects) {
+    const mult = PHASE_MULTIPLIER[phaseKey];
+    const weights = subjects.map((s) => LEVEL_WEIGHT[s.level] * mult[s.level]);
+    const total = weights.reduce((a, b) => a + b, 0);
+    return subjects.map((s, i) => ({ ...s, pct: Math.round((weights[i] / total) * 1000) / 10 }));
+  }
+
+  // ── 結果描画 ──────────────────────────────────────
+  function generate() {
+    const totalWeeks = getTotalWeeks();
+    if (!totalWeeks || totalWeeks < 1) {
+      alert('残り期間を正しく入力してください。');
+      return;
+    }
+    const subjects = activeSubjects();
+    if (subjects.length === 0) {
+      alert('対象科目を1つ以上選んでください。');
+      return;
+    }
+
+    $('result-school').textContent = state.school ? state.school : '志望校未入力';
+    $('result-title').textContent = `合格までの逆算学習計画`;
+    $('result-meta').textContent = `${state.examType === 'henyu' ? '医学部編入' : '一般受験'}・${LEVEL_LABEL[state.level]}・残り${totalWeeks}週間`;
+
+    const body = $('result-body');
+    body.innerHTML = '';
+
+    if (totalWeeks < 4) {
+      const warn = document.createElement('div');
+      warn.className = 'short-warning';
+      warn.textContent = `残り期間が${totalWeeks}週間と短いため、通常のフェーズ分けではなく直前対策に全振りした計画にしています。苦手科目を優先しつつ、得意科目の確認も欠かさないようにしてください。`;
+      body.appendChild(warn);
+
+      const card = buildPhaseCard('final', 1, totalWeeks, subjectAllocationForPhase('final', subjects));
+      body.appendChild(card);
+    } else {
+      const ratio = adjustRatioForWeeks(BASE_RATIO[state.level], totalWeeks);
+      const phaseWeeks = weeksToPhases(ratio, totalWeeks);
+      let cursor = 1;
+      for (const key of ['found', 'drill', 'polish', 'final']) {
+        const w = phaseWeeks[key];
+        if (w <= 0) continue;
+        const card = buildPhaseCard(key, cursor, w, subjectAllocationForPhase(key, subjects));
+        body.appendChild(card);
+        cursor += w;
+      }
+    }
+
+    $('screen-form').classList.add('hidden');
+    $('screen-result').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }
+
+  function buildPhaseCard(phaseKey, startWeek, weekCount, allocations) {
+    const meta = PHASE_META[phaseKey];
+    const card = document.createElement('div');
+    card.className = 'card phase-card';
+    const endWeek = startWeek + weekCount - 1;
+    const weekLabel = weekCount === 1 ? `第${startWeek}週` : `第${startWeek}〜${endWeek}週`;
+    card.innerHTML = `
+      <div class="phase-head">
+        <span class="phase-name">${meta.name}</span>
+        <span class="phase-weeks">${weekLabel}（${weekCount}週間）</span>
+      </div>
+      <div class="phase-desc">${meta.desc}</div>
+      <div class="subject-bars"></div>`;
+    const barsWrap = card.querySelector('.subject-bars');
+    allocations
+      .sort((a, b) => b.pct - a.pct)
+      .forEach((s) => {
+        const row = document.createElement('div');
+        row.className = 'subject-bar-row';
+        row.innerHTML = `
+          <span class="sname">${s.label}</span>
+          <div class="track"><div class="fill" style="width:${s.pct}%"></div></div>
+          <span class="pct">${s.pct}%</span>`;
+        barsWrap.appendChild(row);
+      });
+    return card;
+  }
+
+  $('btn-generate').addEventListener('click', generate);
+  $('btn-edit').addEventListener('click', () => {
+    $('screen-result').classList.add('hidden');
+    $('screen-form').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  });
+</script>
+</body>
+</html>
