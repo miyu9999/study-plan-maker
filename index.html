@@ -200,7 +200,7 @@
       <h2>4. 得意・苦手科目</h2>
       <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
       <div id="subject-list"></div>
-      <div class="hint">理科・国語・社会は「含める」のチェックを外すと計画から外れます。国語・社会は国公立の共通テスト対策用（一般受験のみ）。編入の場合は小論文・面接も含みます。</div>
+      <div class="hint">理科・現代文・古文・漢文・社会は「含める」のチェックを外すと計画から外れます。現代文/古文/漢文・社会は国公立の共通テスト対策用（一般受験のみ）。編入の場合は小論文・面接も含みます。</div>
     </div>
 
     <button class="btn-primary" id="btn-generate">学習計画を作成する</button>
@@ -229,10 +229,10 @@
     levelMode: 'hensachi', // hensachi | category
     overallHensachi: null,
     overallCategory: 'blank', // blank | shaky | ok | applied（模試未受験時の全体レベル）
-    subjectIncluded: { bio: true, chem: true, phys: false, japanese: false, social: false }, // 任意科目のみ対象トグルが必要
+    subjectIncluded: { bio: true, chem: true, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false }, // 任意科目のみ対象トグルが必要
     socialType: 'geography', // geography | japanese_history | world_history | ethics | politics_economy
-    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, japanese: null, social: null, essay: null, interview: null },
-    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', japanese: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
+    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, gendaibun: null, kobun: null, kanbun: null, social: null, essay: null, interview: null },
+    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', gendaibun: 'normal', kobun: 'normal', kanbun: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
     bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
   };
 
@@ -244,8 +244,10 @@
     bio:       { label: '生物',   required: false },
     chem:      { label: '化学',   required: false },
     phys:      { label: '物理',   required: false },
-    japanese:  { label: '国語',   required: false, generalOnly: true }, // 国公立医学部の共通テストで必要。編入では基本不要
-    social:    { label: '社会',   required: false, generalOnly: true }, // 同上。日本史/世界史/地理/倫理政経から選択
+    gendaibun: { label: '現代文', required: false, generalOnly: true }, // 国公立医学部の共通テストで必要。編入では基本不要
+    kobun:     { label: '古文',   required: false, generalOnly: true },
+    kanbun:    { label: '漢文',   required: false, generalOnly: true },
+    social:    { label: '社会',   required: false, generalOnly: true }, // 同上。日本史/世界史/地理/倫理から選択
     essay:     { label: '小論文', required: true, henyuOnly: true },
     interview: { label: '面接',   required: true, henyuOnly: true },
   };
@@ -469,11 +471,23 @@
       { title: '全レベル問題集生物 標準レベル', units: 100, unitLabel: '問' },
       { title: '全レベル問題集生物4 私大上位・国公立上位レベル', units: 50, unitLabel: '問' },
     ],
-    japanese: [
-      { title: '現代文：語彙1700・ゼロから覚醒はじめよう現代文 ／ 古文：重要古文単語315・古典文法をはじめからていねいに ／ 漢文：漢文早覚え速答法', units: 60, unitLabel: '回' },
-      { title: '現代文：新・現代文レベル別問題集1→2 ／ 古文：富井の古文読解をはじめからていねいに ／ 漢文：ステップアップノート10漢文句形ドリル', units: 70, unitLabel: '回' },
-      { title: '現代文：新・現代文レベル別問題集3標準編・きめる！共通テスト現代文 ／ 古文：古文レベル別問題集2→3・共通テスト古文のスゴ技 ／ 漢文：共通テスト漢文のスゴ技', units: 60, unitLabel: '回' },
-      { title: '共通テスト実戦問題集・実戦模試（国語＝現代文・古文・漢文セット）', units: 30, unitLabel: '回' },
+    gendaibun: [
+      { title: '国語力を伸ばす語彙1700 → ゼロから覚醒 はじめよう現代文', units: 60, unitLabel: '回' },
+      { title: '新・現代文レベル別問題集1超基礎編 → 2初級編', units: 70, unitLabel: '回' },
+      { title: '新・現代文レベル別問題集3標準編 → きめる！共通テスト現代文', units: 60, unitLabel: '回' },
+      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
+    ],
+    kobun: [
+      { title: '読んで見て覚える重要古文単語315 → 高校やさしくわかりやすい古典文法', units: 60, unitLabel: '回' },
+      { title: '富井の古文読解をはじめからていねいに → 古文レベル別問題集2初級編', units: 70, unitLabel: '回' },
+      { title: '最短10時間で9割とれる共通テスト古文のスゴ技 → 古文レベル別問題集3標準編', units: 60, unitLabel: '回' },
+      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
+    ],
+    kanbun: [
+      { title: '漢文早覚え速答法 → 岡本のたった3時間で漢文句法', units: 40, unitLabel: '回' },
+      { title: 'ステップアップノート10漢文句形ドリルと演習', units: 50, unitLabel: '回' },
+      { title: '最短10時間で9割とれる共通テスト漢文のスゴ技 → マーク式基礎問題集漢文', units: 40, unitLabel: '回' },
+      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 20, unitLabel: '回' },
     ],
   };
   // 社会は選択科目により参考書ルートが大きく異なるため、科目タイプ別に用意する
