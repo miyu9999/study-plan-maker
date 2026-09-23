@@ -138,8 +138,13 @@
   .day-row { padding: 9px 14px; border-top: 1px solid var(--border); }
   .day-date { font-size: .74rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
   .day-tasks { display: flex; flex-direction: column; gap: 3px; }
-  .task { font-size: .8rem; line-height: 1.5; }
-  .task .t-sub { display: inline-block; min-width: 4.2em; font-weight: 700; color: var(--primary-dark); }
+  .task { font-size: .8rem; line-height: 1.5; display: flex; gap: 6px; align-items: baseline; }
+  .task .t-sub { flex: 0 0 4.6em; font-weight: 700; color: var(--primary-dark); }
+  .task .t-items { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+  .track-label {
+    font-size: .72rem; font-weight: 700; color: var(--text-sub); margin: 10px 0 2px;
+    padding-left: 8px; border-left: 3px solid var(--primary-light);
+  }
   .day-done { font-size: .78rem; color: var(--text-sub); }
 </style>
 </head>
@@ -304,84 +309,89 @@
   // ═══════════════════════════════════════════════════════════
   const BAND_LABEL = ['基礎', '標準', '応用', '発展'];
 
+  // track: 'memorize' = 毎日並行で進める暗記系（単語帳・用語集など。全期間にわたって毎日触る）
+  //        'main'     = 順番に積み上げるメインライン（文法→解釈→長文、講義→演習など。1冊ずつ仕上げて次へ）
+  // cycles: 周回前提の教材（単語帳など）。2周目以降は所要時間を6割で見積もる
   const BOOK_DB = {
     english: [
-      { title: '中学英語をもう一度ひとつひとつわかりやすく', units: 30, unitLabel: '項目', min: 20, band: 0 },
-      { title: '大岩のいちばんはじめの英文法 超基礎文法編', units: 25, unitLabel: '講', min: 30, band: 0 },
-      { title: 'システム英単語Basic', units: 40, unitLabel: 'セクション', min: 20, band: 0 },
-      { title: 'システム英単語', units: 50, unitLabel: 'セクション', min: 25, band: 1 },
-      { title: '関正生の英文法ポラリス1 標準レベル', units: 20, unitLabel: '章', min: 40, band: 1 },
-      { title: '高校英文読解をひとつひとつわかりやすく', units: 30, unitLabel: '回', min: 30, band: 1 },
-      { title: '入門英文問題精講', units: 40, unitLabel: '例題', min: 25, band: 1 },
-      { title: '英語長文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 45, band: 1 },
-      { title: '英文法・語法 Vintage', units: 25, unitLabel: '章', min: 40, band: 2 },
-      { title: '速読英熟語', units: 50, unitLabel: 'セクション', min: 20, band: 2 },
-      { title: '関正生のThe Rules英語長文問題集2', units: 12, unitLabel: '題', min: 50, band: 2 },
-      { title: '英文解釈の技術100', units: 100, unitLabel: '例題', min: 20, band: 3 },
-      { title: '関正生の英語長文ポラリス2', units: 12, unitLabel: '題', min: 55, band: 3 },
+      { title: 'システム英単語Basic', units: 40, unitLabel: 'セクション', min: 20, band: 0, track: 'memorize', cycles: 2 },
+      { title: 'システム英単語', units: 50, unitLabel: 'セクション', min: 25, band: 1, track: 'memorize', cycles: 3 },
+      { title: '速読英熟語', units: 50, unitLabel: 'セクション', min: 20, band: 2, track: 'memorize', cycles: 2 },
+      { title: '中学英語をもう一度ひとつひとつわかりやすく', units: 30, unitLabel: '項目', min: 20, band: 0, track: 'main' },
+      { title: '大岩のいちばんはじめの英文法 超基礎文法編', units: 25, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '関正生の英文法ポラリス1 標準レベル', units: 20, unitLabel: '章', min: 40, band: 1, track: 'main' },
+      { title: '高校英文読解をひとつひとつわかりやすく', units: 30, unitLabel: '回', min: 30, band: 1, track: 'main' },
+      { title: '入門英文問題精講', units: 40, unitLabel: '例題', min: 25, band: 1, track: 'main' },
+      { title: '英語長文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 45, band: 1, track: 'main' },
+      { title: '英文法・語法 Vintage', units: 25, unitLabel: '章', min: 40, band: 2, track: 'main', cycles: 2 },
+      { title: '関正生のThe Rules英語長文問題集2', units: 12, unitLabel: '題', min: 50, band: 2, track: 'main' },
+      { title: '英文解釈の技術100', units: 100, unitLabel: '例題', min: 20, band: 3, track: 'main' },
+      { title: '関正生の英語長文ポラリス2', units: 12, unitLabel: '題', min: 55, band: 3, track: 'main' },
     ],
     math: [
-      { title: '数学I・A 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0 },
-      { title: '数学II・B 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0 },
-      { title: '数学I・A 基礎問題精講', units: 145, unitLabel: '例題', min: 20, band: 1 },
-      { title: '数学II・B 基礎問題精講', units: 167, unitLabel: '例題', min: 20, band: 1 },
-      { title: '数学III・C 基礎問題精講', units: 116, unitLabel: '例題', min: 20, band: 1 },
-      { title: '国公立標準問題集CanPass 数学I・A・II・B', units: 130, unitLabel: '問', min: 30, band: 2 },
-      { title: '国公立標準問題集CanPass 数学III・C', units: 90, unitLabel: '問', min: 30, band: 2 },
-      { title: '実戦 数学重要問題集', units: 150, unitLabel: '問', min: 35, band: 3 },
-      { title: 'ハイレベル数学の完全攻略', units: 60, unitLabel: '問', min: 45, band: 3 },
+      { title: '数学I・A 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0, track: 'main' },
+      { title: '数学II・B 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0, track: 'main' },
+      { title: '数学I・A 基礎問題精講', units: 145, unitLabel: '例題', min: 20, band: 1, track: 'main' },
+      { title: '数学II・B 基礎問題精講', units: 167, unitLabel: '例題', min: 20, band: 1, track: 'main' },
+      { title: '数学III・C 基礎問題精講', units: 116, unitLabel: '例題', min: 20, band: 1, track: 'main' },
+      { title: '国公立標準問題集CanPass 数学I・A・II・B', units: 130, unitLabel: '問', min: 30, band: 2, track: 'main' },
+      { title: '国公立標準問題集CanPass 数学III・C', units: 90, unitLabel: '問', min: 30, band: 2, track: 'main' },
+      { title: '実戦 数学重要問題集', units: 150, unitLabel: '問', min: 35, band: 3, track: 'main' },
+      { title: 'ハイレベル数学の完全攻略', units: 60, unitLabel: '問', min: 45, band: 3, track: 'main' },
     ],
     chem: [
-      { title: '宇宙一わかりやすい高校化学 理論化学', units: 30, unitLabel: '章', min: 30, band: 0 },
-      { title: '宇宙一わかりやすい高校化学 無機化学', units: 20, unitLabel: '章', min: 30, band: 0 },
-      { title: '宇宙一わかりやすい高校化学 有機化学', units: 25, unitLabel: '章', min: 30, band: 0 },
-      { title: 'リードLightノート化学基礎', units: 30, unitLabel: '節', min: 25, band: 1 },
-      { title: 'リードLightノート化学', units: 45, unitLabel: '節', min: 25, band: 1 },
-      { title: '化学重要問題集 A問題', units: 200, unitLabel: '問', min: 15, band: 2 },
-      { title: '化学の新演習', units: 330, unitLabel: '問', min: 20, band: 3 },
-      { title: '化学 標準問題精講', units: 120, unitLabel: '問', min: 25, band: 3 },
+      { title: '宇宙一覚えやすい 化学反応式ハンドブック', units: 20, unitLabel: '項目', min: 15, band: 1, track: 'memorize', cycles: 2 },
+      { title: '宇宙一わかりやすい高校化学 理論化学', units: 30, unitLabel: '章', min: 30, band: 0, track: 'main' },
+      { title: '宇宙一わかりやすい高校化学 無機化学', units: 20, unitLabel: '章', min: 30, band: 0, track: 'main' },
+      { title: '宇宙一わかりやすい高校化学 有機化学', units: 25, unitLabel: '章', min: 30, band: 0, track: 'main' },
+      { title: 'リードLightノート化学基礎', units: 30, unitLabel: '節', min: 25, band: 1, track: 'main' },
+      { title: 'リードLightノート化学', units: 45, unitLabel: '節', min: 25, band: 1, track: 'main' },
+      { title: '化学重要問題集 A問題', units: 200, unitLabel: '問', min: 15, band: 2, track: 'main' },
+      { title: '化学の新演習', units: 330, unitLabel: '問', min: 20, band: 3, track: 'main' },
+      { title: '化学 標準問題精講', units: 120, unitLabel: '問', min: 25, band: 3, track: 'main' },
     ],
     phys: [
-      { title: '秘伝の物理 インプット講義（力学・波動）', units: 30, unitLabel: '講', min: 30, band: 0 },
-      { title: '秘伝の物理 インプット講義（電磁気・熱・原子）', units: 25, unitLabel: '講', min: 30, band: 0 },
-      { title: '高校これでわかる基礎問題集 物理', units: 100, unitLabel: '問', min: 15, band: 1 },
-      { title: '物理［物理基礎・物理］入門問題精講', units: 80, unitLabel: '例題', min: 20, band: 1 },
-      { title: '良問の風', units: 150, unitLabel: '問', min: 20, band: 2 },
-      { title: '名問の森 力学・熱・波動1', units: 70, unitLabel: '問', min: 30, band: 3 },
-      { title: '名問の森 波動2・電磁気・原子', units: 70, unitLabel: '問', min: 30, band: 3 },
+      { title: '秘伝の物理 インプット講義（力学・波動）', units: 30, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '秘伝の物理 インプット講義（電磁気・熱・原子）', units: 25, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '高校これでわかる基礎問題集 物理', units: 100, unitLabel: '問', min: 15, band: 1, track: 'main' },
+      { title: '物理［物理基礎・物理］入門問題精講', units: 80, unitLabel: '例題', min: 20, band: 1, track: 'main' },
+      { title: '良問の風', units: 150, unitLabel: '問', min: 20, band: 2, track: 'main' },
+      { title: '名問の森 力学・熱・波動1', units: 70, unitLabel: '問', min: 30, band: 3, track: 'main' },
+      { title: '名問の森 波動2・電磁気・原子', units: 70, unitLabel: '問', min: 30, band: 3, track: 'main' },
     ],
     bio: [
-      { title: 'リードLightノート生物基礎', units: 25, unitLabel: '節', min: 25, band: 0 },
-      { title: 'リードLightノート生物', units: 45, unitLabel: '節', min: 25, band: 0 },
-      { title: '全レベル問題集 生物1 基礎レベル', units: 40, unitLabel: '問', min: 20, band: 1 },
-      { title: '全レベル問題集 生物2 共通テストレベル', units: 40, unitLabel: '問', min: 25, band: 2 },
-      { title: '生物 基礎問題精講', units: 110, unitLabel: '問', min: 25, band: 2 },
-      { title: '全レベル問題集 生物4 私大上位・国公立上位レベル', units: 35, unitLabel: '問', min: 40, band: 3 },
-      { title: '生物 標準問題精講', units: 90, unitLabel: '問', min: 35, band: 3 },
+      { title: 'リードLightノート生物基礎', units: 25, unitLabel: '節', min: 25, band: 0, track: 'memorize', cycles: 2 },
+      { title: 'リードLightノート生物', units: 45, unitLabel: '節', min: 25, band: 1, track: 'memorize', cycles: 2 },
+      { title: '全レベル問題集 生物1 基礎レベル', units: 40, unitLabel: '問', min: 20, band: 1, track: 'main' },
+      { title: '全レベル問題集 生物2 共通テストレベル', units: 40, unitLabel: '問', min: 25, band: 2, track: 'main' },
+      { title: '生物 基礎問題精講', units: 110, unitLabel: '問', min: 25, band: 2, track: 'main' },
+      { title: '全レベル問題集 生物4 私大上位・国公立上位レベル', units: 35, unitLabel: '問', min: 40, band: 3, track: 'main' },
+      { title: '生物 標準問題精講', units: 90, unitLabel: '問', min: 35, band: 3, track: 'main' },
     ],
     gendaibun: [
-      { title: '国語力を伸ばす語彙1700', units: 30, unitLabel: 'セクション', min: 15, band: 0 },
-      { title: 'ゼロから覚醒 はじめよう現代文', units: 12, unitLabel: '講', min: 40, band: 0 },
-      { title: '新・現代文レベル別問題集1 超基礎編', units: 12, unitLabel: '題', min: 30, band: 1 },
-      { title: '新・現代文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 35, band: 1 },
-      { title: '新・現代文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 40, band: 2 },
-      { title: 'きめる！共通テスト現代文', units: 15, unitLabel: '講', min: 40, band: 2 },
-      { title: '入試現代文へのアクセス 発展編', units: 16, unitLabel: '題', min: 45, band: 3 },
+      { title: '国語力を伸ばす語彙1700', units: 30, unitLabel: 'セクション', min: 15, band: 0, track: 'memorize', cycles: 2 },
+      { title: '入試漢字マスター1800+', units: 36, unitLabel: 'セクション', min: 15, band: 1, track: 'memorize', cycles: 2 },
+      { title: 'ゼロから覚醒 はじめよう現代文', units: 12, unitLabel: '講', min: 40, band: 0, track: 'main' },
+      { title: '新・現代文レベル別問題集1 超基礎編', units: 12, unitLabel: '題', min: 30, band: 1, track: 'main' },
+      { title: '新・現代文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 35, band: 1, track: 'main' },
+      { title: '新・現代文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 40, band: 2, track: 'main' },
+      { title: 'きめる！共通テスト現代文', units: 15, unitLabel: '講', min: 40, band: 2, track: 'main' },
+      { title: '入試現代文へのアクセス 発展編', units: 16, unitLabel: '題', min: 45, band: 3, track: 'main' },
     ],
     kobun: [
-      { title: '読んで見て覚える重要古文単語315', units: 315, unitLabel: '語', min: 2, band: 0 },
-      { title: '高校やさしくわかりやすい古典文法', units: 30, unitLabel: '項目', min: 25, band: 0 },
-      { title: '富井の古文読解をはじめからていねいに', units: 20, unitLabel: '講', min: 35, band: 1 },
-      { title: '古文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 30, band: 1 },
-      { title: '古文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 35, band: 2 },
-      { title: '最短10時間で9割とれる 共通テスト古文のスゴ技', units: 10, unitLabel: '講', min: 40, band: 2 },
-      { title: '古文上達 基礎編', units: 45, unitLabel: '題', min: 35, band: 3 },
+      { title: '読んで見て覚える重要古文単語315', units: 315, unitLabel: '語', min: 2, band: 0, track: 'memorize', cycles: 3 },
+      { title: '高校やさしくわかりやすい古典文法', units: 30, unitLabel: '項目', min: 25, band: 0, track: 'main', cycles: 2 },
+      { title: '富井の古文読解をはじめからていねいに', units: 20, unitLabel: '講', min: 35, band: 1, track: 'main' },
+      { title: '古文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 30, band: 1, track: 'main' },
+      { title: '古文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 35, band: 2, track: 'main' },
+      { title: '最短10時間で9割とれる 共通テスト古文のスゴ技', units: 10, unitLabel: '講', min: 40, band: 2, track: 'main' },
+      { title: '古文上達 基礎編', units: 45, unitLabel: '題', min: 35, band: 3, track: 'main' },
     ],
     kanbun: [
-      { title: '漢文早覚え速答法', units: 10, unitLabel: '章', min: 30, band: 0 },
-      { title: 'ステップアップノート10 漢文句形ドリルと演習', units: 30, unitLabel: '項目', min: 20, band: 1 },
-      { title: '最短10時間で9割とれる 共通テスト漢文のスゴ技', units: 10, unitLabel: '講', min: 35, band: 2 },
-      { title: 'マーク式基礎問題集 漢文', units: 15, unitLabel: '題', min: 30, band: 2 },
+      { title: '漢文早覚え速答法', units: 10, unitLabel: '章', min: 30, band: 0, track: 'main', cycles: 2 },
+      { title: 'ステップアップノート10 漢文句形ドリルと演習', units: 30, unitLabel: '項目', min: 20, band: 1, track: 'main' },
+      { title: '最短10時間で9割とれる 共通テスト漢文のスゴ技', units: 10, unitLabel: '講', min: 35, band: 2, track: 'main' },
+      { title: 'マーク式基礎問題集 漢文', units: 15, unitLabel: '題', min: 30, band: 2, track: 'main' },
     ],
   };
 
@@ -394,42 +404,42 @@
   };
   const SOCIAL_BOOK_DB = {
     geography: [
-      { title: '宇野の最速でわかる地理 系統地理編', units: 20, unitLabel: '講', min: 30, band: 0 },
-      { title: '宇野の最速でわかる地理 地誌編', units: 20, unitLabel: '講', min: 30, band: 0 },
-      { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 30, unitLabel: '章', min: 30, band: 1 },
-      { title: '共通テスト集中講義 地理', units: 25, unitLabel: 'テーマ', min: 30, band: 2 },
-      { title: '共通テスト 地理 地図・統計の考察問題80', units: 80, unitLabel: '問', min: 10, band: 2 },
+      { title: '共通テスト 地理 地図・統計の考察問題80', units: 80, unitLabel: '問', min: 10, band: 2, track: 'memorize', cycles: 2 },
+      { title: '宇野の最速でわかる地理 系統地理編', units: 20, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '宇野の最速でわかる地理 地誌編', units: 20, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 30, unitLabel: '章', min: 30, band: 1, track: 'main' },
+      { title: '共通テスト集中講義 地理', units: 25, unitLabel: 'テーマ', min: 30, band: 2, track: 'main' },
     ],
     japanese_history: [
-      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 原始・古代史', units: 15, unitLabel: '章', min: 35, band: 0 },
-      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 中世・近世史', units: 15, unitLabel: '章', min: 35, band: 0 },
-      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 近現代史', units: 15, unitLabel: '章', min: 35, band: 1 },
-      { title: '時代と流れで覚える！日本史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1 },
-      { title: '共通テスト新課程攻略問題集 歴史総合，日本史探究', units: 20, unitLabel: '回', min: 35, band: 2 },
+      { title: '時代と流れで覚える！日本史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1, track: 'memorize', cycles: 3 },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 原始・古代史', units: 15, unitLabel: '章', min: 35, band: 0, track: 'main' },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 中世・近世史', units: 15, unitLabel: '章', min: 35, band: 0, track: 'main' },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 近現代史', units: 15, unitLabel: '章', min: 35, band: 1, track: 'main' },
+      { title: '共通テスト新課程攻略問題集 歴史総合，日本史探究', units: 20, unitLabel: '回', min: 35, band: 2, track: 'main' },
     ],
     world_history: [
-      { title: 'きめる！共通テスト 歴史総合＋世界史探究', units: 30, unitLabel: '講', min: 35, band: 0 },
-      { title: '金谷の歴史総合 なぜと流れがわかる本', units: 15, unitLabel: '章', min: 35, band: 1 },
-      { title: '時代と流れで覚える！世界史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1 },
-      { title: '共通テスト新課程攻略問題集 歴史総合，世界史探究', units: 20, unitLabel: '回', min: 35, band: 2 },
+      { title: '時代と流れで覚える！世界史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1, track: 'memorize', cycles: 3 },
+      { title: 'きめる！共通テスト 歴史総合＋世界史探究', units: 30, unitLabel: '講', min: 35, band: 0, track: 'main' },
+      { title: '金谷の歴史総合 なぜと流れがわかる本', units: 15, unitLabel: '章', min: 35, band: 1, track: 'main' },
+      { title: '共通テスト新課程攻略問題集 歴史総合，世界史探究', units: 20, unitLabel: '回', min: 35, band: 2, track: 'main' },
     ],
     ethics: [
-      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0 },
-      { title: '蔭山の共通テスト倫理', units: 25, unitLabel: '講', min: 30, band: 0 },
-      { title: '共通テスト 公共、倫理 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1 },
-      { title: '大学入学共通テストへの道 公共，倫理', units: 30, unitLabel: '回', min: 25, band: 2 },
+      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '蔭山の共通テスト倫理', units: 25, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '共通テスト 公共、倫理 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1, track: 'main', cycles: 2 },
+      { title: '大学入学共通テストへの道 公共，倫理', units: 30, unitLabel: '回', min: 25, band: 2, track: 'main' },
     ],
     politics_economy: [
-      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0 },
-      { title: '蔭山の共通テスト政治・経済', units: 25, unitLabel: '講', min: 30, band: 0 },
-      { title: '共通テスト 政治・経済 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1 },
-      { title: '共通テストへの道 政治・経済 問題と解説', units: 30, unitLabel: '回', min: 25, band: 2 },
+      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '蔭山の共通テスト政治・経済', units: 25, unitLabel: '講', min: 30, band: 0, track: 'main' },
+      { title: '共通テスト 政治・経済 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1, track: 'main', cycles: 2 },
+      { title: '共通テストへの道 政治・経済 問題と解説', units: 30, unitLabel: '回', min: 25, band: 2, track: 'main' },
     ],
   };
 
-  // 仕上げは志望校の過去問演習。どの科目にも最後に積む
+  // 仕上げは志望校の過去問演習。直前期に全科目まとめて充てる
   function pastExamBook(subjectLabel) {
-    return { title: `志望校の過去問演習（${subjectLabel}）`, units: 10, unitLabel: '年分', min: 90, band: 3, isPastExam: true };
+    return { title: `志望校の過去問演習（${subjectLabel}）`, units: 10, unitLabel: '年分', min: 90, band: 3, track: 'main', isPastExam: true };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -466,19 +476,35 @@
     return 3;
   }
 
-  function booksForSubject(key, absScore, subjectLabel) {
+  function booksForSubject(key, absScore) {
     const db = key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[key];
     if (!db) return [];
     const startBand = startBandFromAbsScore(absScore);
     const maxBandInDb = Math.max(...db.map((b) => b.band));
     const targetBand = Math.min(SCHOOL_TIER_TARGET_BAND[state.schoolTier], maxBandInDb);
     const picked = db.filter((b) => b.band >= startBand && b.band <= targetBand);
-    // 既にターゲットを超えている科目でも、仕上げの演習は最低1冊は残す
+    // 既にターゲットを超えている科目でも、仕上げ用に最低1冊は残す
     if (picked.length === 0) {
       const fallback = db.filter((b) => b.band === Math.min(startBand, targetBand));
       picked.push(...fallback.slice(-1));
     }
-    return [...picked, pastExamBook(subjectLabel)];
+    return picked;
+  }
+
+  // 周回前提の教材を「1周目」「2周目」…に展開する（2周目以降は所要時間6割で見積もる）
+  function expandCycles(books) {
+    const out = [];
+    books.forEach((b) => {
+      const cycles = b.cycles || 1;
+      for (let c = 1; c <= cycles; c++) {
+        out.push({
+          ...b,
+          min: c === 1 ? b.min : Math.max(1, Math.round(b.min * 0.6)),
+          cycleLabel: cycles > 1 ? `（${c}周目）` : '',
+        });
+      }
+    });
+    return out;
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -540,54 +566,81 @@
     return days;
   }
 
-  // 科目ごとに「何日目に、どの本の何番から何番をやるか」を敷き詰める
-  function buildSubjectSchedule(books, totalDays) {
-    const days = allocateDays(books, totalDays);
-    const plan = new Array(totalDays).fill(null);
-    const spans = [];
-    let cursor = 0;
+  // 1本のトラック（教材の並び）を、与えられた日数範囲に順番に敷き詰める
+  function layTrack(books, dayFrom, dayCount, plan, spans) {
+    if (!books.length || dayCount <= 0) return;
+    const days = allocateDays(books, dayCount);
+    let cursor = dayFrom;
+    const limit = dayFrom + dayCount;
     books.forEach((b, i) => {
       const span = days[i];
       const startDay = cursor;
-      for (let k = 0; k < span && cursor < totalDays; k++, cursor++) {
+      for (let k = 0; k < span && cursor < limit; k++, cursor++) {
         const from = Math.floor((k * b.units) / span) + 1;
         const to = Math.floor(((k + 1) * b.units) / span);
         // 1日1単元未満のペースの本では「その日に進む分がない日」が出る。同じ番号を連日出さない
-        plan[cursor] = to >= from ? { book: b, from, to } : null;
+        if (to >= from) plan[cursor].push({ book: b, from, to });
       }
-      spans.push({ book: b, startDay, endDay: Math.min(cursor, totalDays) - 1, days: span });
+      spans.push({ book: b, startDay, endDay: Math.min(cursor, limit) - 1, days: span });
     });
-    return { plan, spans };
+  }
+
+  // 科目ごとのスケジュール。
+  //   暗記系（単語帳・用語集）＝全期間にわたって毎日並行
+  //   メインライン（文法→解釈→長文、講義→演習）＝順番に1冊ずつ
+  //   直前期は全科目まとめて志望校の過去問演習
+  function buildSubjectSchedule(key, absScore, subjectLabel, studyDays, pastExamDays, totalDays) {
+    const picked = booksForSubject(key, absScore);
+    const memorize = expandCycles(picked.filter((b) => b.track === 'memorize'));
+    const main = expandCycles(picked.filter((b) => b.track !== 'memorize'));
+    const pastExam = expandCycles([pastExamBook(subjectLabel)]);
+
+    const plan = Array.from({ length: totalDays }, () => []);
+    const spans = [];
+    // 暗記系とメインラインは同じ期間（0〜studyDays）を並行で走る
+    layTrack(memorize, 0, studyDays, plan, spans);
+    layTrack(main, 0, studyDays, plan, spans);
+    layTrack(pastExam, studyDays, pastExamDays, plan, spans);
+
+    const allBooks = [...memorize, ...main, ...pastExam];
+    const totalMinutes = allBooks.reduce((a, b) => a + b.units * b.min, 0);
+    return { plan, spans, books: allBooks, hasMemorize: memorize.length > 0, totalMinutes };
+  }
+
+  // 直前期（過去問演習）に充てる日数
+  function pastExamDaysFor(totalDays) {
+    if (totalDays <= 14) return Math.max(1, Math.floor(totalDays * 0.2));
+    return clamp(Math.round(totalDays * 0.15), 7, 45);
   }
 
   function buildPlan() {
     const totalDays = getTotalDays();
+    const pastExamDays = pastExamDaysFor(totalDays);
+    const studyDays = Math.max(1, totalDays - pastExamDays);
     const overallScore = getOverallScore();
     const isHenyu = state.examType === 'henyu';
+
     const subjects = Object.keys(SUBJECT_META)
       .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
       .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
       .map((k) => {
         const label = k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label;
         const abs = getSubjectAbsScore(k, overallScore);
-        const books = booksForSubject(k, abs, label);
-        const schedule = buildSubjectSchedule(books, totalDays);
-        const totalMinutes = books.reduce((a, b) => a + b.units * b.min, 0);
-        return { key: k, label, abs, books, ...schedule, totalMinutes };
+        const schedule = buildSubjectSchedule(k, abs, label, studyDays, pastExamDays, totalDays);
+        return { key: k, label, abs, ...schedule };
       });
 
     // 1日ごとの負荷（分）
     const dailyMinutes = new Array(totalDays).fill(0);
     for (let d = 0; d < totalDays; d++) {
       subjects.forEach((s) => {
-        const t = s.plan[d];
-        if (t) dailyMinutes[d] += (t.to - t.from + 1) * t.book.min;
+        s.plan[d].forEach((t) => { dailyMinutes[d] += (t.to - t.from + 1) * t.book.min; });
       });
     }
     const requiredMinutes = subjects.reduce((a, s) => a + s.totalMinutes, 0);
     const avgMinutes = requiredMinutes / totalDays;
 
-    return { totalDays, subjects, dailyMinutes, requiredMinutes, avgMinutes, overallScore };
+    return { totalDays, studyDays, pastExamDays, subjects, dailyMinutes, requiredMinutes, avgMinutes, overallScore };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -744,24 +797,35 @@
       const block = document.createElement('div');
       block.className = 'subject-block';
       const subjTotalHours = Math.round(s.totalMinutes / 60);
+      const bookCount = new Set(s.books.map((b) => b.title)).size;
       block.innerHTML = `
         <div class="sb-head">
           <span class="sb-name">${s.label}</span>
-          <span class="sb-meta">偏差値${Math.round(s.abs)}相当 / ${s.books.length}冊 / 計${subjTotalHours}時間</span>
+          <span class="sb-meta">偏差値${Math.round(s.abs)}相当 / ${bookCount}冊 / 計${subjTotalHours}時間</span>
         </div>`;
-      s.spans.forEach((sp) => {
-        const b = sp.book;
-        const startD = dateForDayIndex(sp.startDay);
-        const endD = dateForDayIndex(sp.endDay);
-        const perDay = (b.units / sp.days);
-        const line = document.createElement('div');
-        line.className = 'book-line';
-        line.innerHTML = `
-          <span class="band-tag">${b.isPastExam ? '仕上げ' : BAND_LABEL[b.band]}</span>
-          <span class="b-title">${b.title}</span>
-          <span class="b-amount">全${b.units}${b.unitLabel} / 1日 ${perDay < 1 ? perDay.toFixed(2) : perDay.toFixed(1)}${b.unitLabel}</span>
-          <span class="b-span">${formatDate(startD)}〜${formatDate(endD)}</span>`;
-        block.appendChild(line);
+
+      const groups = [
+        { key: 'memorize', label: '毎日並行して進める（暗記系）', items: s.spans.filter((sp) => sp.book.track === 'memorize') },
+        { key: 'main', label: '順番に1冊ずつ仕上げる', items: s.spans.filter((sp) => sp.book.track !== 'memorize') },
+      ];
+      groups.forEach((g) => {
+        if (!g.items.length) return;
+        const head = document.createElement('div');
+        head.className = 'track-label';
+        head.textContent = g.label;
+        block.appendChild(head);
+        g.items.forEach((sp) => {
+          const b = sp.book;
+          const perDay = b.units / sp.days;
+          const line = document.createElement('div');
+          line.className = 'book-line';
+          line.innerHTML = `
+            <span class="band-tag">${b.isPastExam ? '仕上げ' : BAND_LABEL[b.band]}</span>
+            <span class="b-title">${b.title}${b.cycleLabel}</span>
+            <span class="b-amount">全${b.units}${b.unitLabel} / 1日 ${perDay < 1 ? perDay.toFixed(2) : perDay.toFixed(1)}${b.unitLabel}</span>
+            <span class="b-span">${formatDate(dateForDayIndex(sp.startDay))}〜${formatDate(dateForDayIndex(sp.endDay))}</span>`;
+          block.appendChild(line);
+        });
       });
       wrap.appendChild(block);
     });
@@ -795,10 +859,13 @@
         row.className = 'day-row';
         const tasks = plan.subjects
           .map((s) => {
-            const t = s.plan[d];
-            if (!t) return null;
-            const range = t.from === t.to ? `${t.from}` : `${t.from}〜${t.to}`;
-            return `<div class="task"><span class="t-sub">${s.label}</span>${t.book.title} ${range}${t.book.unitLabel}</div>`;
+            const items = s.plan[d];
+            if (!items.length) return null;
+            const lines = items.map((t) => {
+              const range = t.from === t.to ? `${t.from}` : `${t.from}〜${t.to}`;
+              return `<span class="t-item">${t.book.title}${t.book.cycleLabel} ${range}${t.book.unitLabel}</span>`;
+            }).join('');
+            return `<div class="task"><span class="t-sub">${s.label}</span><span class="t-items">${lines}</span></div>`;
           })
           .filter(Boolean);
         row.innerHTML = `
