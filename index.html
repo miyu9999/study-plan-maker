@@ -18,6 +18,12 @@
     --warn-bg: #fff6e5;
     --warn-border: #f0d38a;
     --warn-text: #7a5a00;
+    --ng-bg: #fdecec;
+    --ng-border: #f0aaaa;
+    --ng-text: #97302f;
+    --ok-bg: #e9f7ee;
+    --ok-border: #a4dbb8;
+    --ok-text: #1f6b3c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -30,14 +36,11 @@
   header h1 { font-size: 1.4rem; font-weight: 800; }
   header p { font-size: .85rem; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
 
-  main { max-width: 640px; margin: 0 auto; padding: 8px 16px 60px; }
+  main { max-width: 680px; margin: 0 auto; padding: 8px 16px 60px; }
 
   .card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    padding: 22px;
-    margin-bottom: 18px;
+    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 22px; margin-bottom: 18px;
   }
   .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
   .field { margin-bottom: 18px; }
@@ -64,8 +67,6 @@
   }
   .subject-row:last-child { border-bottom: 0; }
   .subject-row .name { flex: 0 0 70px; font-size: .88rem; font-weight: 600; }
-  .subject-row .seg { flex: 1; }
-  .subject-row .seg button { padding: 8px 4px; font-size: .78rem; }
   .row-controls { flex: 1; display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
   .include-toggle { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--text-sub); white-space: nowrap; }
   .include-toggle input { width: 16px; height: 16px; }
@@ -85,7 +86,6 @@
   }
 
   .hint { font-size: .76rem; color: var(--text-sub); margin-top: 6px; line-height: 1.5; }
-
   .hidden { display: none !important; }
 
   .disclaimer {
@@ -98,50 +98,63 @@
   .result-header .title { font-size: 1.25rem; font-weight: 800; margin-top: 4px; }
   .result-header .meta { font-size: .8rem; color: var(--text-sub); margin-top: 6px; }
 
-  .phase-card { border-left: 5px solid var(--primary); }
-  .phase-card .phase-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
-  .phase-card .phase-name { font-size: 1.05rem; font-weight: 800; }
-  .phase-card .phase-weeks { font-size: .78rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 3px 10px; border-radius: 999px; }
-  .phase-card .phase-desc { font-size: .84rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 14px; }
+  /* 実現可能性パネル */
+  .verdict { border-radius: 12px; padding: 16px; margin-bottom: 18px; border: 1px solid; }
+  .verdict.ok { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-text); }
+  .verdict.tight { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+  .verdict.ng { background: var(--ng-bg); border-color: var(--ng-border); color: var(--ng-text); }
+  .verdict .v-title { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
+  .verdict .v-body { font-size: .84rem; line-height: 1.7; }
+  .verdict .v-nums { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: .8rem; }
+  .verdict .v-nums b { font-size: 1.15rem; }
 
-  .subject-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .subject-bar-row:last-child { margin-bottom: 0; }
-  .subject-bar-row .sname { flex: 0 0 78px; font-size: .8rem; font-weight: 600; }
-  .subject-bar-row .track { flex: 1; height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; }
-  .subject-bar-row .fill { height: 100%; background: var(--primary); border-radius: 999px; }
-  .subject-bar-row .pct { flex: 0 0 34px; font-size: .76rem; text-align: right; color: var(--text-sub); }
-
-  .short-warning {
-    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
-    border-radius: 10px; padding: 14px; font-size: .85rem; line-height: 1.7; margin-bottom: 18px;
+  /* リスト1 */
+  .subject-block { margin-bottom: 16px; }
+  .subject-block:last-child { margin-bottom: 0; }
+  .subject-block .sb-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid var(--primary-light);
   }
+  .subject-block .sb-name { font-size: .98rem; font-weight: 800; }
+  .subject-block .sb-meta { font-size: .74rem; color: var(--text-sub); }
+  .book-line { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+  .book-line:last-child { border-bottom: 0; }
+  .band-tag {
+    flex: none; font-size: .66rem; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+    background: var(--primary-light); color: var(--primary-dark);
+  }
+  .book-line .b-title { flex: 1 1 150px; font-size: .84rem; font-weight: 600; }
+  .book-line .b-amount { font-size: .74rem; color: var(--text-sub); white-space: nowrap; }
+  .book-line .b-span { font-size: .74rem; color: var(--primary); font-weight: 700; white-space: nowrap; }
 
-  .book-section { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
-  .book-section-title { font-size: .78rem; font-weight: 700; color: var(--text-sub); margin-bottom: 10px; }
-  .book-row { margin-bottom: 12px; }
-  .book-row:last-child { margin-bottom: 0; }
-  .book-subject { font-size: .78rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
-  .book-title-input { font-size: .84rem !important; padding: 9px 10px !important; margin-bottom: 6px; }
-  .book-units-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .book-units-input { width: 64px !important; padding: 7px !important; text-align: center; flex: none; }
-  .book-unit-label { font-size: .76rem; color: var(--text-sub); }
-  .book-pace { margin-left: auto; font-size: .8rem; font-weight: 700; color: var(--primary); }
-  .book-guidance { font-size: .82rem; color: var(--text-sub); line-height: 1.6; }
+  /* 日毎カレンダー */
+  .week-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: var(--surface); }
+  .week-head {
+    width: 100%; text-align: left; border: 0; background: var(--bg); padding: 10px 14px; cursor: pointer;
+    font-family: inherit; font-size: .84rem; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; gap: 8px;
+  }
+  .week-head:hover { background: var(--primary-light); }
+  .week-head .w-load { font-size: .74rem; color: var(--text-sub); font-weight: 600; }
+  .day-row { padding: 9px 14px; border-top: 1px solid var(--border); }
+  .day-date { font-size: .74rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
+  .day-tasks { display: flex; flex-direction: column; gap: 3px; }
+  .task { font-size: .8rem; line-height: 1.5; }
+  .task .t-sub { display: inline-block; min-width: 4.2em; font-weight: 700; color: var(--primary-dark); }
+  .day-done { font-size: .78rem; color: var(--text-sub); }
 </style>
 </head>
 <body>
 <header>
   <h1>逆算学習計画メーカー（仮）</h1>
-  <p>志望試験・現在の学力・残り期間から、週単位の逆算学習計画を自動生成します</p>
+  <p>志望校・残り期間・模試の偏差値から、やるべき参考書と本番までの日毎の計画を逆算します</p>
 </header>
 
 <main>
   <section id="screen-form">
     <div class="card">
-      <h2>1. 志望試験</h2>
-      <!-- 医学部編入モードは一旦UIから非表示（一般受験に絞る方針、2026-09-23）。コードは残してあるので復活可能 -->
+      <h2>1. 志望校</h2>
+      <!-- 医学部編入モードは一旦UIから非表示（一般受験に絞る方針）。コードは残してあるので復活可能 -->
       <div class="field hidden">
-        <label class="field-label">試験タイプ</label>
         <div class="seg" id="exam-type-seg">
           <button type="button" data-val="general" class="active">一般受験</button>
           <button type="button" data-val="henyu">医学部編入</button>
@@ -154,15 +167,15 @@
       <div class="field">
         <label class="field-label">志望校の難易度帯</label>
         <div class="seg" id="school-tier-seg">
-          <button type="button" data-val="competitive" class="active">難関〜最難関（旧帝大・上位私立等）</button>
-          <button type="button" data-val="standard">標準（地方国公立・中堅私立等）</button>
+          <button type="button" data-val="competitive" class="active">難関〜最難関</button>
+          <button type="button" data-val="standard">標準</button>
         </div>
-        <div class="hint">参考書ルートをどのレベルまで進めるかに反映されます（標準は早慶レベルの教材までは進めません）。</div>
+        <div class="hint">やるべき参考書のゴール地点が変わります（標準は最難関レベルの教材までは積みません）。</div>
       </div>
     </div>
 
     <div class="card">
-      <h2>2. 残り期間</h2>
+      <h2>2. 残り期間と勉強時間</h2>
       <div class="field">
         <label class="field-label">入力方法</label>
         <div class="seg" id="period-mode-seg">
@@ -179,6 +192,11 @@
         <input type="number" id="weeks-input" min="1" max="104" placeholder="例：24" />
       </div>
       <div class="hint" id="period-hint"></div>
+      <div class="field" style="margin-top:18px">
+        <label class="field-label">1日に確保できる勉強時間（時間）</label>
+        <input type="number" id="hours-input" min="0.5" max="16" step="0.5" value="5" />
+        <div class="hint">この時間で参考書が終わるかどうかを判定します。</div>
+      </div>
     </div>
 
     <div class="card">
@@ -206,47 +224,64 @@
     </div>
 
     <div class="card">
-      <h2>4. 得意・苦手科目</h2>
+      <h2>4. 科目ごとの学力</h2>
       <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
       <div id="subject-list"></div>
-      <div class="hint">理科・現代文・古文・漢文・社会は「含める」のチェックを外すと計画から外れます。現代文/古文/漢文・社会は国公立の共通テスト対策用（一般受験のみ）。編入の場合は小論文・面接も含みます。</div>
+      <div class="hint">「含める」を外した科目は計画から外れます。現代文・古文・漢文・社会は共通テスト対策用です。</div>
     </div>
 
     <button class="btn-primary" id="btn-generate">学習計画を作成する</button>
   </section>
 
   <section id="screen-result" class="hidden">
-    <div class="disclaimer">本ツールが出す計画はあくまで目安であり、合格を保証するものではありません。参考情報としてご利用ください。</div>
+    <div class="disclaimer">本ツールが出す計画はあくまで目安であり、合格を保証するものではありません。参考書の分量・所要時間は概算値なので、実物に合わせて調整してください。</div>
     <div class="result-header">
       <div class="school" id="result-school"></div>
-      <div class="title" id="result-title"></div>
+      <div class="title">合格までの逆算計画</div>
       <div class="meta" id="result-meta"></div>
     </div>
-    <div id="result-body"></div>
+
+    <div id="verdict-wrap"></div>
+
+    <div class="card">
+      <h2>やるべき参考書リスト</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px">科目ごとの偏差値と志望校の難易度帯から、今のあなたに必要な教材だけを並べています。</div>
+      <div id="book-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>本番までの日毎の計画</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px" id="calendar-hint"></div>
+      <div id="calendar"></div>
+    </div>
+
     <button class="btn-secondary" id="btn-edit">条件を変えてもう一度</button>
   </section>
 </main>
 
 <script>
-  // ── 状態 ──────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════
+  // 状態
+  // ═══════════════════════════════════════════════════════════
   const state = {
-    examType: 'general',   // general | henyu
+    examType: 'general',
     school: '',
-    schoolTier: 'competitive', // competitive（難関〜最難関）| standard（標準）：参考書ルートの到達目標に反映
-    periodMode: 'date',    // date | weeks
+    schoolTier: 'competitive', // competitive | standard
+    periodMode: 'date',
     examDate: '',
     weeksDirect: null,
-    levelMode: 'hensachi', // hensachi | category
+    hoursPerDay: 5,
+    levelMode: 'hensachi',
     overallHensachi: null,
-    overallCategory: 'blank', // blank | shaky | ok | applied（模試未受験時の全体レベル）
-    subjectIncluded: { bio: true, chem: true, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false }, // 任意科目のみ対象トグルが必要
-    socialType: 'geography', // geography | japanese_history | world_history | ethics | politics_economy
-    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, gendaibun: null, kobun: null, kanbun: null, social: null, essay: null, interview: null },
-    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', gendaibun: 'normal', kobun: 'normal', kanbun: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
-    bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
+    overallCategory: 'blank',
+    subjectIncluded: { bio: true, chem: true, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false },
+    socialType: 'geography',
+    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, gendaibun: null, kobun: null, kanbun: null, social: null },
+    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', gendaibun: 'normal', kobun: 'normal', kanbun: 'normal', social: 'normal' },
   };
 
   const $ = (id) => document.getElementById(id);
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   const SUBJECT_META = {
     english:   { label: '英語',   required: true },
@@ -254,15 +289,310 @@
     bio:       { label: '生物',   required: false },
     chem:      { label: '化学',   required: false },
     phys:      { label: '物理',   required: false },
-    gendaibun: { label: '現代文', required: false, generalOnly: true }, // 国公立医学部の共通テストで必要。編入では基本不要
+    gendaibun: { label: '現代文', required: false, generalOnly: true },
     kobun:     { label: '古文',   required: false, generalOnly: true },
     kanbun:    { label: '漢文',   required: false, generalOnly: true },
-    social:    { label: '社会',   required: false, generalOnly: true }, // 同上。日本史/世界史/地理/倫理から選択
-    essay:     { label: '小論文', required: true, henyuOnly: true },
-    interview: { label: '面接',   required: true, henyuOnly: true },
+    social:    { label: '社会',   required: false, generalOnly: true },
   };
 
-  // ── セグメントボタン共通ハンドラ ──────────────────────
+  // ═══════════════════════════════════════════════════════════
+  // 参考書データ（1冊ずつ個別に持つ）
+  //   band : 0=基礎徹底 1=標準(日大) 2=応用(MARCH・地方国公立) 3=発展(早慶・難関国公立)
+  //   units: 総量 / unitLabel: 単位 / min: 1単位あたりの所要時間（分）
+  //   出典：武田塾（逆転合格.com）のレベル別参考書ルートを2026-09時点で確認し構成。
+  //   分量・所要時間は目安（版によって変わるため、実物に合わせて調整する前提）
+  // ═══════════════════════════════════════════════════════════
+  const BAND_LABEL = ['基礎', '標準', '応用', '発展'];
+
+  const BOOK_DB = {
+    english: [
+      { title: '中学英語をもう一度ひとつひとつわかりやすく', units: 30, unitLabel: '項目', min: 20, band: 0 },
+      { title: '大岩のいちばんはじめの英文法 超基礎文法編', units: 25, unitLabel: '講', min: 30, band: 0 },
+      { title: 'システム英単語Basic', units: 40, unitLabel: 'セクション', min: 20, band: 0 },
+      { title: 'システム英単語', units: 50, unitLabel: 'セクション', min: 25, band: 1 },
+      { title: '関正生の英文法ポラリス1 標準レベル', units: 20, unitLabel: '章', min: 40, band: 1 },
+      { title: '高校英文読解をひとつひとつわかりやすく', units: 30, unitLabel: '回', min: 30, band: 1 },
+      { title: '入門英文問題精講', units: 40, unitLabel: '例題', min: 25, band: 1 },
+      { title: '英語長文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 45, band: 1 },
+      { title: '英文法・語法 Vintage', units: 25, unitLabel: '章', min: 40, band: 2 },
+      { title: '速読英熟語', units: 50, unitLabel: 'セクション', min: 20, band: 2 },
+      { title: '関正生のThe Rules英語長文問題集2', units: 12, unitLabel: '題', min: 50, band: 2 },
+      { title: '英文解釈の技術100', units: 100, unitLabel: '例題', min: 20, band: 3 },
+      { title: '関正生の英語長文ポラリス2', units: 12, unitLabel: '題', min: 55, band: 3 },
+    ],
+    math: [
+      { title: '数学I・A 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0 },
+      { title: '数学II・B 入門問題精講', units: 80, unitLabel: '例題', min: 15, band: 0 },
+      { title: '数学I・A 基礎問題精講', units: 145, unitLabel: '例題', min: 20, band: 1 },
+      { title: '数学II・B 基礎問題精講', units: 167, unitLabel: '例題', min: 20, band: 1 },
+      { title: '数学III・C 基礎問題精講', units: 116, unitLabel: '例題', min: 20, band: 1 },
+      { title: '国公立標準問題集CanPass 数学I・A・II・B', units: 130, unitLabel: '問', min: 30, band: 2 },
+      { title: '国公立標準問題集CanPass 数学III・C', units: 90, unitLabel: '問', min: 30, band: 2 },
+      { title: '実戦 数学重要問題集', units: 150, unitLabel: '問', min: 35, band: 3 },
+      { title: 'ハイレベル数学の完全攻略', units: 60, unitLabel: '問', min: 45, band: 3 },
+    ],
+    chem: [
+      { title: '宇宙一わかりやすい高校化学 理論化学', units: 30, unitLabel: '章', min: 30, band: 0 },
+      { title: '宇宙一わかりやすい高校化学 無機化学', units: 20, unitLabel: '章', min: 30, band: 0 },
+      { title: '宇宙一わかりやすい高校化学 有機化学', units: 25, unitLabel: '章', min: 30, band: 0 },
+      { title: 'リードLightノート化学基礎', units: 30, unitLabel: '節', min: 25, band: 1 },
+      { title: 'リードLightノート化学', units: 45, unitLabel: '節', min: 25, band: 1 },
+      { title: '化学重要問題集 A問題', units: 200, unitLabel: '問', min: 15, band: 2 },
+      { title: '化学の新演習', units: 330, unitLabel: '問', min: 20, band: 3 },
+      { title: '化学 標準問題精講', units: 120, unitLabel: '問', min: 25, band: 3 },
+    ],
+    phys: [
+      { title: '秘伝の物理 インプット講義（力学・波動）', units: 30, unitLabel: '講', min: 30, band: 0 },
+      { title: '秘伝の物理 インプット講義（電磁気・熱・原子）', units: 25, unitLabel: '講', min: 30, band: 0 },
+      { title: '高校これでわかる基礎問題集 物理', units: 100, unitLabel: '問', min: 15, band: 1 },
+      { title: '物理［物理基礎・物理］入門問題精講', units: 80, unitLabel: '例題', min: 20, band: 1 },
+      { title: '良問の風', units: 150, unitLabel: '問', min: 20, band: 2 },
+      { title: '名問の森 力学・熱・波動1', units: 70, unitLabel: '問', min: 30, band: 3 },
+      { title: '名問の森 波動2・電磁気・原子', units: 70, unitLabel: '問', min: 30, band: 3 },
+    ],
+    bio: [
+      { title: 'リードLightノート生物基礎', units: 25, unitLabel: '節', min: 25, band: 0 },
+      { title: 'リードLightノート生物', units: 45, unitLabel: '節', min: 25, band: 0 },
+      { title: '全レベル問題集 生物1 基礎レベル', units: 40, unitLabel: '問', min: 20, band: 1 },
+      { title: '全レベル問題集 生物2 共通テストレベル', units: 40, unitLabel: '問', min: 25, band: 2 },
+      { title: '生物 基礎問題精講', units: 110, unitLabel: '問', min: 25, band: 2 },
+      { title: '全レベル問題集 生物4 私大上位・国公立上位レベル', units: 35, unitLabel: '問', min: 40, band: 3 },
+      { title: '生物 標準問題精講', units: 90, unitLabel: '問', min: 35, band: 3 },
+    ],
+    gendaibun: [
+      { title: '国語力を伸ばす語彙1700', units: 30, unitLabel: 'セクション', min: 15, band: 0 },
+      { title: 'ゼロから覚醒 はじめよう現代文', units: 12, unitLabel: '講', min: 40, band: 0 },
+      { title: '新・現代文レベル別問題集1 超基礎編', units: 12, unitLabel: '題', min: 30, band: 1 },
+      { title: '新・現代文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 35, band: 1 },
+      { title: '新・現代文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 40, band: 2 },
+      { title: 'きめる！共通テスト現代文', units: 15, unitLabel: '講', min: 40, band: 2 },
+      { title: '入試現代文へのアクセス 発展編', units: 16, unitLabel: '題', min: 45, band: 3 },
+    ],
+    kobun: [
+      { title: '読んで見て覚える重要古文単語315', units: 315, unitLabel: '語', min: 2, band: 0 },
+      { title: '高校やさしくわかりやすい古典文法', units: 30, unitLabel: '項目', min: 25, band: 0 },
+      { title: '富井の古文読解をはじめからていねいに', units: 20, unitLabel: '講', min: 35, band: 1 },
+      { title: '古文レベル別問題集2 初級編', units: 12, unitLabel: '題', min: 30, band: 1 },
+      { title: '古文レベル別問題集3 標準編', units: 12, unitLabel: '題', min: 35, band: 2 },
+      { title: '最短10時間で9割とれる 共通テスト古文のスゴ技', units: 10, unitLabel: '講', min: 40, band: 2 },
+      { title: '古文上達 基礎編', units: 45, unitLabel: '題', min: 35, band: 3 },
+    ],
+    kanbun: [
+      { title: '漢文早覚え速答法', units: 10, unitLabel: '章', min: 30, band: 0 },
+      { title: 'ステップアップノート10 漢文句形ドリルと演習', units: 30, unitLabel: '項目', min: 20, band: 1 },
+      { title: '最短10時間で9割とれる 共通テスト漢文のスゴ技', units: 10, unitLabel: '講', min: 35, band: 2 },
+      { title: 'マーク式基礎問題集 漢文', units: 15, unitLabel: '題', min: 30, band: 2 },
+    ],
+  };
+
+  const SOCIAL_TYPE_LABEL = {
+    geography: '地理',
+    japanese_history: '日本史',
+    world_history: '世界史',
+    ethics: '公共・倫理',
+    politics_economy: '公共・政治経済',
+  };
+  const SOCIAL_BOOK_DB = {
+    geography: [
+      { title: '宇野の最速でわかる地理 系統地理編', units: 20, unitLabel: '講', min: 30, band: 0 },
+      { title: '宇野の最速でわかる地理 地誌編', units: 20, unitLabel: '講', min: 30, band: 0 },
+      { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 30, unitLabel: '章', min: 30, band: 1 },
+      { title: '共通テスト集中講義 地理', units: 25, unitLabel: 'テーマ', min: 30, band: 2 },
+      { title: '共通テスト 地理 地図・統計の考察問題80', units: 80, unitLabel: '問', min: 10, band: 2 },
+    ],
+    japanese_history: [
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 原始・古代史', units: 15, unitLabel: '章', min: 35, band: 0 },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 中世・近世史', units: 15, unitLabel: '章', min: 35, band: 0 },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本 近現代史', units: 15, unitLabel: '章', min: 35, band: 1 },
+      { title: '時代と流れで覚える！日本史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1 },
+      { title: '共通テスト新課程攻略問題集 歴史総合，日本史探究', units: 20, unitLabel: '回', min: 35, band: 2 },
+    ],
+    world_history: [
+      { title: 'きめる！共通テスト 歴史総合＋世界史探究', units: 30, unitLabel: '講', min: 35, band: 0 },
+      { title: '金谷の歴史総合 なぜと流れがわかる本', units: 15, unitLabel: '章', min: 35, band: 1 },
+      { title: '時代と流れで覚える！世界史用語', units: 40, unitLabel: 'テーマ', min: 20, band: 1 },
+      { title: '共通テスト新課程攻略問題集 歴史総合，世界史探究', units: 20, unitLabel: '回', min: 35, band: 2 },
+    ],
+    ethics: [
+      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0 },
+      { title: '蔭山の共通テスト倫理', units: 25, unitLabel: '講', min: 30, band: 0 },
+      { title: '共通テスト 公共、倫理 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1 },
+      { title: '大学入学共通テストへの道 公共，倫理', units: 30, unitLabel: '回', min: 25, band: 2 },
+    ],
+    politics_economy: [
+      { title: '蔭山の共通テスト公共', units: 20, unitLabel: '講', min: 30, band: 0 },
+      { title: '蔭山の共通テスト政治・経済', units: 25, unitLabel: '講', min: 30, band: 0 },
+      { title: '共通テスト 政治・経済 集中講義', units: 25, unitLabel: 'テーマ', min: 30, band: 1 },
+      { title: '共通テストへの道 政治・経済 問題と解説', units: 30, unitLabel: '回', min: 25, band: 2 },
+    ],
+  };
+
+  // 仕上げは志望校の過去問演習。どの科目にも最後に積む
+  function pastExamBook(subjectLabel) {
+    return { title: `志望校の過去問演習（${subjectLabel}）`, units: 10, unitLabel: '年分', min: 90, band: 3, isPastExam: true };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // レベル判定
+  // ═══════════════════════════════════════════════════════════
+  const CATEGORY_SCORE = { blank: 35, shaky: 45, ok: 55, applied: 65 };
+  const CATEGORY_LABEL = {
+    blank: '白紙に近い（これから基礎から）',
+    shaky: '基礎は触ったが抜け漏れが多い',
+    ok: '基礎はできる（応用に穴がある）',
+    applied: '応用・過去問演習ができる',
+  };
+  const SCHOOL_TIER_TARGET_BAND = { competitive: 3, standard: 2 };
+
+  function getOverallScore() {
+    if (state.levelMode === 'hensachi') return state.overallHensachi != null ? state.overallHensachi : 50;
+    return CATEGORY_SCORE[state.overallCategory];
+  }
+
+  function getSubjectAbsScore(key, overallScore) {
+    if (state.levelMode === 'hensachi') {
+      const v = state.subjectHensachi[key];
+      return v != null ? v : overallScore;
+    }
+    const delta = { weak: -10, normal: 0, strong: 10 }[state.subjectCategory[key]];
+    return overallScore + delta;
+  }
+
+  // その科目で「どのレベルの教材から始めるか」。既にできている科目は基礎を飛ばす
+  function startBandFromAbsScore(abs) {
+    if (abs < 45) return 0;
+    if (abs < 55) return 1;
+    if (abs < 65) return 2;
+    return 3;
+  }
+
+  function booksForSubject(key, absScore, subjectLabel) {
+    const db = key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[key];
+    if (!db) return [];
+    const startBand = startBandFromAbsScore(absScore);
+    const maxBandInDb = Math.max(...db.map((b) => b.band));
+    const targetBand = Math.min(SCHOOL_TIER_TARGET_BAND[state.schoolTier], maxBandInDb);
+    const picked = db.filter((b) => b.band >= startBand && b.band <= targetBand);
+    // 既にターゲットを超えている科目でも、仕上げの演習は最低1冊は残す
+    if (picked.length === 0) {
+      const fallback = db.filter((b) => b.band === Math.min(startBand, targetBand));
+      picked.push(...fallback.slice(-1));
+    }
+    return [...picked, pastExamBook(subjectLabel)];
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 期間
+  // ═══════════════════════════════════════════════════════════
+  function todayStr() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+
+  function computeDaysFromDate(dateStr) {
+    if (!dateStr) return null;
+    const exam = new Date(dateStr + 'T00:00:00');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return Math.max(1, Math.ceil((exam - now) / (1000 * 60 * 60 * 24)));
+  }
+
+  function getTotalDays() {
+    if (state.periodMode === 'date') return computeDaysFromDate(state.examDate);
+    return state.weeksDirect ? state.weeksDirect * 7 : null;
+  }
+
+  function startDate() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function dateForDayIndex(i) {
+    const d = startDate();
+    d.setDate(d.getDate() + i);
+    return d;
+  }
+
+  function formatDate(d) {
+    const w = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+    return `${d.getMonth() + 1}/${d.getDate()}（${w}）`;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 逆算スケジューリング：本の総量から日割りを出す
+  // ═══════════════════════════════════════════════════════════
+  function allocateDays(books, totalDays) {
+    const weights = books.map((b) => b.units * b.min);
+    const sum = weights.reduce((a, b) => a + b, 0) || 1;
+    const days = books.map((_, i) => Math.max(1, Math.round((weights[i] / sum) * totalDays)));
+    let diff = days.reduce((a, b) => a + b, 0) - totalDays;
+    let guard = 0;
+    while (diff > 0 && guard++ < 10000) {
+      const maxIdx = days.indexOf(Math.max(...days));
+      if (days[maxIdx] <= 1) break;
+      days[maxIdx] -= 1; diff -= 1;
+    }
+    while (diff < 0 && guard++ < 10000) {
+      const maxIdx = weights.indexOf(Math.max(...weights));
+      days[maxIdx] += 1; diff += 1;
+    }
+    return days;
+  }
+
+  // 科目ごとに「何日目に、どの本の何番から何番をやるか」を敷き詰める
+  function buildSubjectSchedule(books, totalDays) {
+    const days = allocateDays(books, totalDays);
+    const plan = new Array(totalDays).fill(null);
+    const spans = [];
+    let cursor = 0;
+    books.forEach((b, i) => {
+      const span = days[i];
+      const startDay = cursor;
+      for (let k = 0; k < span && cursor < totalDays; k++, cursor++) {
+        const from = Math.floor((k * b.units) / span) + 1;
+        const to = Math.floor(((k + 1) * b.units) / span);
+        // 1日1単元未満のペースの本では「その日に進む分がない日」が出る。同じ番号を連日出さない
+        plan[cursor] = to >= from ? { book: b, from, to } : null;
+      }
+      spans.push({ book: b, startDay, endDay: Math.min(cursor, totalDays) - 1, days: span });
+    });
+    return { plan, spans };
+  }
+
+  function buildPlan() {
+    const totalDays = getTotalDays();
+    const overallScore = getOverallScore();
+    const isHenyu = state.examType === 'henyu';
+    const subjects = Object.keys(SUBJECT_META)
+      .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
+      .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
+      .map((k) => {
+        const label = k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label;
+        const abs = getSubjectAbsScore(k, overallScore);
+        const books = booksForSubject(k, abs, label);
+        const schedule = buildSubjectSchedule(books, totalDays);
+        const totalMinutes = books.reduce((a, b) => a + b.units * b.min, 0);
+        return { key: k, label, abs, books, ...schedule, totalMinutes };
+      });
+
+    // 1日ごとの負荷（分）
+    const dailyMinutes = new Array(totalDays).fill(0);
+    for (let d = 0; d < totalDays; d++) {
+      subjects.forEach((s) => {
+        const t = s.plan[d];
+        if (t) dailyMinutes[d] += (t.to - t.from + 1) * t.book.min;
+      });
+    }
+    const requiredMinutes = subjects.reduce((a, s) => a + s.totalMinutes, 0);
+    const avgMinutes = requiredMinutes / totalDays;
+
+    return { totalDays, subjects, dailyMinutes, requiredMinutes, avgMinutes, overallScore };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // 入力UI
+  // ═══════════════════════════════════════════════════════════
   function wireSeg(containerId, onChange) {
     const el = $(containerId);
     el.querySelectorAll('button').forEach((btn) => {
@@ -280,6 +610,7 @@
     state.periodMode = val;
     $('period-date-field').classList.toggle('hidden', val !== 'date');
     $('period-weeks-field').classList.toggle('hidden', val !== 'weeks');
+    updatePeriodHint();
   });
   wireSeg('level-mode-seg', (val) => {
     state.levelMode = val;
@@ -288,52 +619,29 @@
     renderSubjectList();
   });
   wireSeg('level-category-seg', (val) => { state.overallCategory = val; });
+
+  $('school-input').addEventListener('input', (e) => { state.school = e.target.value; });
   $('overall-hensachi-input').addEventListener('input', (e) => {
     state.overallHensachi = e.target.value === '' ? null : parseFloat(e.target.value);
   });
-
-  $('school-input').addEventListener('input', (e) => { state.school = e.target.value; });
-  $('exam-date-input').addEventListener('change', (e) => {
-    state.examDate = e.target.value;
-    updatePeriodHint();
+  $('hours-input').addEventListener('input', (e) => {
+    state.hoursPerDay = parseFloat(e.target.value) || 0;
   });
+  $('exam-date-input').addEventListener('change', (e) => { state.examDate = e.target.value; updatePeriodHint(); });
   $('weeks-input').addEventListener('input', (e) => {
     state.weeksDirect = parseInt(e.target.value, 10) || null;
+    updatePeriodHint();
   });
-
-  function todayStr() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
   $('exam-date-input').min = todayStr();
 
-  function computeWeeksFromDate(dateStr) {
-    if (!dateStr) return null;
-    const exam = new Date(dateStr + 'T00:00:00');
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((exam - now) / (1000 * 60 * 60 * 24));
-    return Math.max(1, Math.ceil(diffDays / 7));
-  }
-
   function updatePeriodHint() {
-    if (state.periodMode === 'date' && state.examDate) {
-      const w = computeWeeksFromDate(state.examDate);
-      $('period-hint').textContent = `試験日まで約 ${w} 週間`;
-    } else {
-      $('period-hint').textContent = '';
-    }
+    const days = getTotalDays();
+    $('period-hint').textContent = days ? `本番まで ${days} 日（約${Math.round(days / 7)}週間）` : '';
   }
 
-  function getTotalWeeks() {
-    if (state.periodMode === 'date') return computeWeeksFromDate(state.examDate);
-    return state.weeksDirect;
-  }
-
-  // ── 科目リスト描画 ──────────────────────────────────
   function renderSubjectList() {
     $('subject-mode-hint').textContent = state.levelMode === 'hensachi'
-      ? '科目ごとの偏差値を入力してください（空欄は全体偏差値と同じ＝普通として扱います）。'
+      ? '科目ごとの偏差値を入力してください（空欄は全体偏差値と同じ扱い）。この値でどの参考書から始めるかが決まります。'
       : '各科目について、自分の中での得意・苦手を選んでください。';
 
     const isHenyu = state.examType === 'henyu';
@@ -370,22 +678,13 @@
       wrap.appendChild(row);
 
       const checkEl = row.querySelector('.include-check');
-      if (checkEl) {
-        checkEl.addEventListener('change', (e) => {
-          state.subjectIncluded[key] = e.target.checked;
-          renderSubjectList();
-        });
-      }
+      if (checkEl) checkEl.addEventListener('change', (e) => { state.subjectIncluded[key] = e.target.checked; renderSubjectList(); });
       const socialTypeEl = row.querySelector('.social-type-select');
-      if (socialTypeEl) {
-        socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
-      }
+      if (socialTypeEl) socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
       const hensachiEl = row.querySelector('.hensachi-input');
-      if (hensachiEl) {
-        hensachiEl.addEventListener('input', (e) => {
-          state.subjectHensachi[key] = e.target.value === '' ? null : parseFloat(e.target.value);
-        });
-      }
+      if (hensachiEl) hensachiEl.addEventListener('input', (e) => {
+        state.subjectHensachi[key] = e.target.value === '' ? null : parseFloat(e.target.value);
+      });
       const levelSeg = row.querySelector('.level-seg');
       if (levelSeg) {
         levelSeg.querySelectorAll('button').forEach((btn) => {
@@ -400,398 +699,140 @@
   }
   renderSubjectList();
 
-  // ── 逆算ロジック ──────────────────────────────────
-  // 模試未受験者向けの全体レベル選択肢 → 偏差値相当スコアへのマッピング
-  const CATEGORY_SCORE = { blank: 35, shaky: 45, ok: 55, applied: 65 };
-  const CATEGORY_LABEL = {
-    blank: '白紙に近い（これから基礎から）',
-    shaky: '基礎は触ったが抜け漏れが多い',
-    ok: '基礎はできる（応用に穴がある）',
-    applied: '応用・過去問演習ができる',
-  };
-
-  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-  function getOverallScore() {
-    if (state.levelMode === 'hensachi') {
-      return state.overallHensachi != null ? state.overallHensachi : 50;
-    }
-    return CATEGORY_SCORE[state.overallCategory];
+  // ═══════════════════════════════════════════════════════════
+  // 結果描画
+  // ═══════════════════════════════════════════════════════════
+  function fmtHours(min) {
+    const h = min / 60;
+    return h >= 10 ? h.toFixed(1) : h.toFixed(1);
   }
 
-  // 科目の相対的な強さ（delta）：偏差値モードは「科目偏差値−全体偏差値」、未受験モードは苦手/普通/得意を±10相当に変換
-  function getSubjectDelta(key, overallScore) {
-    if (state.levelMode === 'hensachi') {
-      const v = state.subjectHensachi[key];
-      if (v == null) return 0;
-      return v - overallScore;
-    }
-    return { weak: -10, normal: 0, strong: 10 }[state.subjectCategory[key]];
-  }
-
-  // 偏差値35/50/65をそれぞれ「基礎からやり直し／ある程度できるが穴がある／仕上げ段階」相当のフェーズ配分とみなし、
-  // 実際のスコアはその間（外側はクランプ）を線形補間する。3段階の離散選択だった頃の比率をそのままアンカーとして流用。
-  const RATIO_ANCHORS = [
-    { s: 35, r: { found: 0.40, drill: 0.30, polish: 0.20, final: 0.10 } },
-    { s: 50, r: { found: 0.25, drill: 0.35, polish: 0.25, final: 0.15 } },
-    { s: 65, r: { found: 0.10, drill: 0.30, polish: 0.35, final: 0.25 } },
-  ];
-  function ratioFromScore(score) {
-    const [a, b, c] = RATIO_ANCHORS;
-    if (score <= a.s) return a.r;
-    if (score >= c.s) return c.r;
-    const [lo, hi] = score < b.s ? [a, b] : [b, c];
-    const t = (score - lo.s) / (hi.s - lo.s);
-    const lerp = (k) => lo.r[k] + (hi.r[k] - lo.r[k]) * t;
-    return { found: lerp('found'), drill: lerp('drill'), polish: lerp('polish'), final: lerp('final') };
-  }
-
-  // 参考書ルート：科目ごとに基礎固め期→演習期→総仕上げ期→直前期の4段階（PHASE_ORDERの並びに対応）
-  // 武田塾（逆転合格.com、基礎徹底/日大/MARCH・地方国公立/早慶・難関国公立レベル別ルート）の公開情報を
-  // 2026-09時点でWeb確認し、レベルの並びを4フェーズにマッピングして採用。
-  // 総ユニット数はあくまで目安。実際の教材の分量に応じて画面上で調整できる
-  const PHASE_ORDER = ['found', 'drill', 'polish', 'final'];
-  const BOOK_DB = {
-    english: [
-      { title: 'システム英単語(中学版) → 大岩のいちばんはじめの英文法 超基礎文法編', units: 60, unitLabel: 'レッスン' },
-      { title: 'システム英単語 → 関正生の英文法ポラリス1 → 高校英文読解をひとつひとつわかりやすく', units: 70, unitLabel: '単元' },
-      { title: '英語長文レベル別問題集3標準編 → 関正生の英語長文ポラリス', units: 50, unitLabel: '回' },
-      { title: '英文法・語法 Vintage → 志望校過去問演習', units: 40, unitLabel: '回' },
-    ],
-    math: [
-      { title: '数学入門問題精講 → 数学基礎問題精講', units: 100, unitLabel: '例題' },
-      { title: '数学Ⅲ・C基礎問題精講 → 大学入試数学 落とせない必須101題', units: 90, unitLabel: '例題' },
-      { title: '解法のエウレカ → 国公立標準問題集CanPass', units: 80, unitLabel: '問' },
-      { title: '実戦数学重要問題集 → 志望校別過去問演習', units: 50, unitLabel: '回' },
-    ],
-    chem: [
-      { title: '宇宙一わかりやすい高校化学（理論・無機・有機）', units: 70, unitLabel: '単元' },
-      { title: 'リードLightノート化学 → 全レベル問題集化学2 共通テストレベル', units: 90, unitLabel: '問' },
-      { title: '化学重要問題集 A問題', units: 100, unitLabel: '問' },
-      { title: '化学の新研究・新演習 → 化学標準問題精講', units: 50, unitLabel: '問' },
-    ],
-    phys: [
-      { title: '秘伝の物理 インプット講義（力学・波動／電磁気・熱・原子）', units: 70, unitLabel: '単元' },
-      { title: '高校これでわかる基礎問題集 → 物理入門問題精講', units: 80, unitLabel: '問' },
-      { title: '全レベル問題集物理2 共通テストレベル → 良問の風', units: 90, unitLabel: '問' },
-      { title: '名問の森（力学・熱・波動1 / 波動Ⅱ・電磁気・原子）', units: 50, unitLabel: '問' },
-    ],
-    bio: [
-      { title: 'リードLightノート生物基礎・生物', units: 70, unitLabel: '単元' },
-      { title: '全レベル問題集生物1 基礎レベル', units: 90, unitLabel: '問' },
-      { title: '全レベル問題集生物 標準レベル', units: 100, unitLabel: '問' },
-      { title: '全レベル問題集生物4 私大上位・国公立上位レベル', units: 50, unitLabel: '問' },
-    ],
-    gendaibun: [
-      { title: '国語力を伸ばす語彙1700 → ゼロから覚醒 はじめよう現代文', units: 60, unitLabel: '回' },
-      { title: '新・現代文レベル別問題集1超基礎編 → 2初級編', units: 70, unitLabel: '回' },
-      { title: '新・現代文レベル別問題集3標準編 → きめる！共通テスト現代文', units: 60, unitLabel: '回' },
-      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
-    ],
-    kobun: [
-      { title: '読んで見て覚える重要古文単語315 → 高校やさしくわかりやすい古典文法', units: 60, unitLabel: '回' },
-      { title: '富井の古文読解をはじめからていねいに → 古文レベル別問題集2初級編', units: 70, unitLabel: '回' },
-      { title: '最短10時間で9割とれる共通テスト古文のスゴ技 → 古文レベル別問題集3標準編', units: 60, unitLabel: '回' },
-      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
-    ],
-    kanbun: [
-      { title: '漢文早覚え速答法 → 岡本のたった3時間で漢文句法', units: 40, unitLabel: '回' },
-      { title: 'ステップアップノート10漢文句形ドリルと演習', units: 50, unitLabel: '回' },
-      { title: '最短10時間で9割とれる共通テスト漢文のスゴ技 → マーク式基礎問題集漢文', units: 40, unitLabel: '回' },
-      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 20, unitLabel: '回' },
-    ],
-  };
-  // 社会は選択科目により参考書ルートが大きく異なるため、科目タイプ別に用意する
-  // 2025年開始の新課程共通テストでは「現代社会」廃止・「公共」必修化に伴い、公民は「公共，倫理」「公共，政治・経済」の2択のみ
-  // （旧課程の統合科目「倫理，政治・経済」はもう存在しない）
-  const SOCIAL_TYPE_LABEL = {
-    geography: '地理',
-    japanese_history: '日本史',
-    world_history: '世界史',
-    ethics: '公共・倫理',
-    politics_economy: '公共・政治経済',
-  };
-  const SOCIAL_BOOK_DB = {
-    geography: [
-      { title: '宇野の最速でわかる地理（系統地理編／地誌編）', units: 60, unitLabel: '単元' },
-      { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 50, unitLabel: '単元' },
-      { title: '共通テスト集中講義 地理 → 地図・統計の考察問題80', units: 50, unitLabel: '回' },
-      { title: '共通テスト過去問・実戦問題集（地理）', units: 30, unitLabel: '回' },
-    ],
-    japanese_history: [
-      { title: '金谷の日本史「なぜ」と「流れ」がわかる本（原始・古代史／中世・近世史）', units: 60, unitLabel: '単元' },
-      { title: '金谷の日本史「なぜ」と「流れ」がわかる本（近現代史）→ 時代と流れで覚える！日本史用語', units: 60, unitLabel: '単元' },
-      { title: '共通テスト新課程攻略問題集 歴史総合，日本史探究', units: 50, unitLabel: '回' },
-      { title: '共通テスト過去問・実戦問題集・実戦模試（日本史）', units: 30, unitLabel: '回' },
-    ],
-    world_history: [
-      { title: 'きめる！共通テスト歴史総合＋世界史探求 → 金谷の歴史総合 なぜと流れがわかる本', units: 60, unitLabel: '単元' },
-      { title: '時代と流れで覚える！世界史用語', units: 60, unitLabel: '単元' },
-      { title: '共通テスト新課程攻略問題集 歴史総合，世界史探究', units: 50, unitLabel: '回' },
-      { title: '共通テスト過去問・実戦問題集・実戦模試（世界史）', units: 30, unitLabel: '回' },
-    ],
-    ethics: [
-      { title: '蔭山の共通テスト公共 → 蔭山の共通テスト倫理', units: 50, unitLabel: '単元' },
-      { title: '共通テスト 公共、倫理 集中講義', units: 50, unitLabel: '単元' },
-      { title: '大学入学共通テストへの道 公共，倫理', units: 50, unitLabel: '回' },
-      { title: '共通テスト総合問題集・実戦問題集（公共，倫理）', units: 30, unitLabel: '回' },
-    ],
-    politics_economy: [
-      { title: '蔭山の共通テスト公共 → 蔭山の共通テスト政治・経済', units: 50, unitLabel: '単元' },
-      { title: '共通テスト 政治・経済 集中講義', units: 50, unitLabel: '単元' },
-      { title: '共通テストへの道 政治・経済 問題と解説', units: 50, unitLabel: '回' },
-      { title: '共通テスト過去問・ハンドブック公共、政治・経済 最短ルートで完全攻略', units: 30, unitLabel: '回' },
-    ],
-  };
-  // 小論文・面接は「教材を1冊仕上げる」型のペース配分にそぐわないため、固定の練習ガイダンスを表示する
-  const SUBJECT_GUIDANCE = {
-    essay: '週1本、志望校の過去問テーマで答案を書き、添削を受ける。',
-    interview: '月1回、想定質問（志望動機・医療系時事等）で模擬面接を行う。',
-  };
-
-  // 参考書は「今何フェーズ目か」だけでなく「その科目の絶対偏差値」からスタート地点を決める。
-  // 既に得意な科目は基礎の本を素通りし、苦手な科目は基礎からしっかり積む。
-  // 志望校の難易度帯は「どこまでのレベルの教材まで進める必要があるか（到達上限）」に反映する
-  function startBandFromAbsScore(abs) {
-    if (abs < 45) return 0;
-    if (abs < 55) return 1;
-    if (abs < 65) return 2;
-    return 3;
-  }
-  const SCHOOL_TIER_TARGET_BAND = { competitive: 3, standard: 2 };
-  function bookBandForPhase(abs, phaseIdx, db) {
-    const maxIdx = db.length - 1;
-    if (phaseIdx === maxIdx) return maxIdx; // 直前期は常に志望校過去問演習
-    const startBand = Math.min(startBandFromAbsScore(abs), maxIdx);
-    const targetBand = Math.min(SCHOOL_TIER_TARGET_BAND[state.schoolTier] ?? maxIdx, maxIdx);
-    return Math.min(startBand + phaseIdx, targetBand);
-  }
-
-  function escapeAttr(str) {
-    return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  }
-
-  const PHASE_META = {
-    found:  { name: '基礎固め期',   desc: '教科書レベルの抜け・漏れを潰す期間。苦手科目を中心に、土台を作り直すことに時間を使う。' },
-    drill:  { name: '演習期',       desc: '基礎を土台に、問題演習量を増やして得点力をつける期間。苦手科目の比重は残しつつ、実戦形式の演習を増やす。' },
-    polish: { name: '総仕上げ期',   desc: '全科目のバランスを整え、過去問演習を本格化する期間。苦手・得意にかかわらず穴を残さない。' },
-    final:  { name: '直前期',       desc: '得意科目で確実に得点しつつ、苦手科目は最低限のコンディションを維持する期間。新しいことには手を広げない。' },
-};
-
-  // レベル×残り期間の長さで、基礎固め期の比率を圧縮し、演習・総仕上げ・直前に再配分する
-  function adjustRatioForWeeks(baseRatio, weeks) {
-    const r = { ...baseRatio };
-    if (weeks < 20) { r.found -= 0.05; r.drill += 0.05; }
-    if (weeks < 12) { r.found -= 0.05; r.polish += 0.05; }
-    if (weeks < 6)  { r.found -= 0.05; r.final += 0.05; }
-    const floor = weeks < 6 ? 0 : 0.05;
-    if (r.found < floor) {
-      const deficit = floor - r.found;
-      r.found = floor;
-      r.drill -= deficit; // 演習期から不足分を吸収
-    }
-    const sum = r.found + r.drill + r.polish + r.final;
-    return { found: r.found / sum, drill: r.drill / sum, polish: r.polish / sum, final: r.final / sum };
-  }
-
-  function weeksToPhases(ratio, totalWeeks) {
-    const raw = {
-      found: ratio.found * totalWeeks,
-      drill: ratio.drill * totalWeeks,
-      polish: ratio.polish * totalWeeks,
-      final: ratio.final * totalWeeks,
-    };
-    const floored = {};
-    let used = 0;
-    for (const k of ['found', 'drill', 'polish', 'final']) {
-      floored[k] = Math.max(k === 'final' ? 1 : 0, Math.floor(raw[k]));
-      used += floored[k];
-    }
-    // 端数を、最も比率が大きい演習期に寄せて帳尻を合わせる
-    let remainder = totalWeeks - used;
-    const order = ['drill', 'polish', 'found', 'final'];
-    let i = 0;
-    while (remainder > 0) {
-      floored[order[i % order.length]] += 1;
-      remainder -= 1;
-      i += 1;
-    }
-    while (remainder < 0) {
-      const k = order[i % order.length];
-      if (floored[k] > (k === 'final' ? 1 : 0)) { floored[k] -= 1; remainder += 1; }
-      i += 1;
-      if (i > 40) break; // 安全弁
-    }
-    return floored;
-  }
-
-  // 科目ごとの相対的な強さ（delta、正=得意寄り／負=苦手寄り）とフェーズごとの重み付けで、時間配分（%）を出す
-  // delta=0（普通）を基準に、苦手なほど重みを増やす。基礎固め期は苦手科目をさらに強調し、直前期は得意科目の得点源固めを優先する
-  function subjectBaseWeight(delta) {
-    return clamp(1 - delta * 0.08, 0.5, 2.2);
-  }
-  const PHASE_SKEW = { found: 0.35, drill: 0.15, polish: 0, final: -0.15 };
-  function subjectPhaseWeight(delta, phaseKey) {
-    const base = subjectBaseWeight(delta);
-    const skew = clamp(1 + (PHASE_SKEW[phaseKey] * -delta) / 10, 0.5, 1.8);
-    return base * skew;
-  }
-
-  function activeSubjects() {
-    const isHenyu = state.examType === 'henyu';
-    const overallScore = getOverallScore();
-    return Object.keys(SUBJECT_META)
-      .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
-      .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
-      .map((k) => {
-        const delta = getSubjectDelta(k, overallScore);
-        return {
-          key: k,
-          label: k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label,
-          delta,
-          abs: overallScore + delta, // 科目の絶対偏差値相当（参考書の開始レベル判定に使う）
-        };
-      });
-  }
-
-  function subjectAllocationForPhase(phaseKey, subjects) {
-    const weights = subjects.map((s) => subjectPhaseWeight(s.delta, phaseKey));
-    const total = weights.reduce((a, b) => a + b, 0);
-    return subjects.map((s, i) => ({ ...s, pct: Math.round((weights[i] / total) * 1000) / 10 }));
-  }
-
-  // ── 結果描画 ──────────────────────────────────────
-  function generate() {
-    const totalWeeks = getTotalWeeks();
-    if (!totalWeeks || totalWeeks < 1) {
-      alert('残り期間を正しく入力してください。');
-      return;
-    }
-    if (state.levelMode === 'hensachi' && state.overallHensachi == null) {
-      alert('全体偏差値を入力してください。');
-      return;
-    }
-    const subjects = activeSubjects();
-    if (subjects.length === 0) {
-      alert('対象科目を1つ以上選んでください。');
-      return;
-    }
-
-    const overallScore = getOverallScore();
-    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${overallScore}` : CATEGORY_LABEL[state.overallCategory];
-
-    $('result-school').textContent = state.school ? state.school : '志望校未入力';
-    $('result-title').textContent = `合格までの逆算学習計画`;
-    $('result-meta').textContent = `${state.examType === 'henyu' ? '医学部編入' : '一般受験'}・${levelLabelText}・残り${totalWeeks}週間`;
-
-    const body = $('result-body');
-    body.innerHTML = '';
-
-    if (totalWeeks < 4) {
-      const warn = document.createElement('div');
-      warn.className = 'short-warning';
-      warn.textContent = `残り期間が${totalWeeks}週間と短いため、通常のフェーズ分けではなく直前対策に全振りした計画にしています。苦手科目を優先しつつ、得意科目の確認も欠かさないようにしてください。`;
-      body.appendChild(warn);
-
-      const card = buildPhaseCard('final', 1, totalWeeks, subjectAllocationForPhase('final', subjects));
-      body.appendChild(card);
+  function renderVerdict(plan) {
+    const wrap = $('verdict-wrap');
+    const availMin = state.hoursPerDay * 60;
+    const ratio = plan.avgMinutes / (availMin || 1);
+    let cls, title, body;
+    if (ratio <= 0.85) {
+      cls = 'ok';
+      title = '間に合う見込みです';
+      body = `今の設定なら、確保できる時間の範囲でこの参考書リストを終えられます。余裕分は過去問演習や苦手分野の追加演習に回せます。`;
+    } else if (ratio <= 1.15) {
+      cls = 'tight';
+      title = 'ぎりぎり間に合う計算です';
+      body = `休んだ日の遅れを取り戻す余地がほとんどありません。勉強時間を増やすか、志望校の難易度帯・科目数を見直すと安全です。`;
     } else {
-      const ratio = adjustRatioForWeeks(ratioFromScore(overallScore), totalWeeks);
-      const phaseWeeks = weeksToPhases(ratio, totalWeeks);
-      let cursor = 1;
-      for (const key of ['found', 'drill', 'polish', 'final']) {
-        const w = phaseWeeks[key];
-        if (w <= 0) continue;
-        const card = buildPhaseCard(key, cursor, w, subjectAllocationForPhase(key, subjects));
-        body.appendChild(card);
-        cursor += w;
-      }
+      cls = 'ng';
+      title = 'このままでは終わりません';
+      body = `必要な時間が確保できる時間を上回っています。①1日の勉強時間を増やす ②志望校の難易度帯を「標準」にする ③科目を減らす ④参考書の分量を実物に合わせて調整する、のいずれかが必要です。`;
     }
+    wrap.innerHTML = `
+      <div class="verdict ${cls}">
+        <div class="v-title">${title}</div>
+        <div class="v-body">${body}</div>
+        <div class="v-nums">
+          <span>必要な平均学習時間 <b>${fmtHours(plan.avgMinutes)}</b> 時間/日</span>
+          <span>確保できる時間 <b>${state.hoursPerDay}</b> 時間/日</span>
+          <span>総学習量 <b>${Math.round(plan.requiredMinutes / 60)}</b> 時間</span>
+        </div>
+      </div>`;
+  }
+
+  function renderBookList(plan) {
+    const wrap = $('book-list');
+    wrap.innerHTML = '';
+    plan.subjects.forEach((s) => {
+      const block = document.createElement('div');
+      block.className = 'subject-block';
+      const subjTotalHours = Math.round(s.totalMinutes / 60);
+      block.innerHTML = `
+        <div class="sb-head">
+          <span class="sb-name">${s.label}</span>
+          <span class="sb-meta">偏差値${Math.round(s.abs)}相当 / ${s.books.length}冊 / 計${subjTotalHours}時間</span>
+        </div>`;
+      s.spans.forEach((sp) => {
+        const b = sp.book;
+        const startD = dateForDayIndex(sp.startDay);
+        const endD = dateForDayIndex(sp.endDay);
+        const perDay = (b.units / sp.days);
+        const line = document.createElement('div');
+        line.className = 'book-line';
+        line.innerHTML = `
+          <span class="band-tag">${b.isPastExam ? '仕上げ' : BAND_LABEL[b.band]}</span>
+          <span class="b-title">${b.title}</span>
+          <span class="b-amount">全${b.units}${b.unitLabel} / 1日 ${perDay < 1 ? perDay.toFixed(2) : perDay.toFixed(1)}${b.unitLabel}</span>
+          <span class="b-span">${formatDate(startD)}〜${formatDate(endD)}</span>`;
+        block.appendChild(line);
+      });
+      wrap.appendChild(block);
+    });
+  }
+
+  function renderCalendar(plan) {
+    const wrap = $('calendar');
+    wrap.innerHTML = '';
+    const weeks = Math.ceil(plan.totalDays / 7);
+    $('calendar-hint').textContent = `本番まで${plan.totalDays}日ぶんの計画です。週をタップすると日毎の内訳が開きます。`;
+
+    for (let w = 0; w < weeks; w++) {
+      const startIdx = w * 7;
+      const endIdx = Math.min(startIdx + 6, plan.totalDays - 1);
+      let weekMinutes = 0;
+      for (let d = startIdx; d <= endIdx; d++) weekMinutes += plan.dailyMinutes[d];
+
+      const card = document.createElement('div');
+      card.className = 'week-card';
+      const head = document.createElement('button');
+      head.className = 'week-head';
+      head.innerHTML = `
+        <span>第${w + 1}週：${formatDate(dateForDayIndex(startIdx))} 〜 ${formatDate(dateForDayIndex(endIdx))}</span>
+        <span class="w-load">1日平均 ${fmtHours(weekMinutes / (endIdx - startIdx + 1))}時間</span>`;
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = w === 0 ? '' : 'hidden';
+      for (let d = startIdx; d <= endIdx; d++) {
+        const row = document.createElement('div');
+        row.className = 'day-row';
+        const tasks = plan.subjects
+          .map((s) => {
+            const t = s.plan[d];
+            if (!t) return null;
+            const range = t.from === t.to ? `${t.from}` : `${t.from}〜${t.to}`;
+            return `<div class="task"><span class="t-sub">${s.label}</span>${t.book.title} ${range}${t.book.unitLabel}</div>`;
+          })
+          .filter(Boolean);
+        row.innerHTML = `
+          <div class="day-date">${formatDate(dateForDayIndex(d))}（${fmtHours(plan.dailyMinutes[d])}時間）</div>
+          <div class="day-tasks">${tasks.length ? tasks.join('') : '<div class="day-done">この日にやる教材はありません（総復習・過去問の見直しに充てましょう）</div>'}</div>`;
+        body.appendChild(row);
+      }
+      head.addEventListener('click', () => body.classList.toggle('hidden'));
+      card.appendChild(body);
+      wrap.appendChild(card);
+    }
+  }
+
+  function generate() {
+    const totalDays = getTotalDays();
+    if (!totalDays || totalDays < 1) { alert('残り期間を正しく入力してください。'); return; }
+    if (totalDays > 900) { alert('残り期間が長すぎます（900日以内で入力してください）。'); return; }
+    if (state.levelMode === 'hensachi' && state.overallHensachi == null) { alert('全体偏差値を入力してください。'); return; }
+    if (!state.hoursPerDay || state.hoursPerDay <= 0) { alert('1日の勉強時間を入力してください。'); return; }
+
+    const plan = buildPlan();
+    if (plan.subjects.length === 0) { alert('対象科目を1つ以上選んでください。'); return; }
+
+    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
+    $('result-school').textContent = state.school ? state.school : '志望校未入力';
+    $('result-meta').textContent = `${state.schoolTier === 'competitive' ? '難関〜最難関' : '標準'}・${levelLabelText}・本番まで${plan.totalDays}日`;
+
+    renderVerdict(plan);
+    renderBookList(plan);
+    renderCalendar(plan);
 
     $('screen-form').classList.add('hidden');
     $('screen-result').classList.remove('hidden');
     window.scrollTo(0, 0);
-  }
-
-  function buildPhaseCard(phaseKey, startWeek, weekCount, allocations) {
-    const meta = PHASE_META[phaseKey];
-    const card = document.createElement('div');
-    card.className = 'card phase-card';
-    const endWeek = startWeek + weekCount - 1;
-    const weekLabel = weekCount === 1 ? `第${startWeek}週` : `第${startWeek}〜${endWeek}週`;
-    card.innerHTML = `
-      <div class="phase-head">
-        <span class="phase-name">${meta.name}</span>
-        <span class="phase-weeks">${weekLabel}（${weekCount}週間）</span>
-      </div>
-      <div class="phase-desc">${meta.desc}</div>
-      <div class="subject-bars"></div>`;
-    const barsWrap = card.querySelector('.subject-bars');
-    allocations
-      .sort((a, b) => b.pct - a.pct)
-      .forEach((s) => {
-        const row = document.createElement('div');
-        row.className = 'subject-bar-row';
-        row.innerHTML = `
-          <span class="sname">${s.label}</span>
-          <div class="track"><div class="fill" style="width:${s.pct}%"></div></div>
-          <span class="pct">${s.pct}%</span>`;
-        barsWrap.appendChild(row);
-      });
-
-    const booksWrap = document.createElement('div');
-    booksWrap.className = 'book-section';
-    booksWrap.innerHTML = '<div class="book-section-title">このフェーズで使う教材・1日の目安ペース</div>';
-    const phaseIdx = PHASE_ORDER.indexOf(phaseKey);
-    allocations.forEach((s) => {
-      const row = document.createElement('div');
-      row.className = 'book-row';
-
-      if (SUBJECT_GUIDANCE[s.key]) {
-        row.innerHTML = `<div class="book-subject">${s.label}</div><div class="book-guidance">${SUBJECT_GUIDANCE[s.key]}</div>`;
-        booksWrap.appendChild(row);
-        return;
-      }
-
-      const db = s.key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[s.key];
-      if (!db) return;
-      const bandIdx = bookBandForPhase(s.abs, phaseIdx, db);
-      const rec = db[bandIdx];
-      const overrideKey = s.key === 'social' ? `${phaseKey}_social_${state.socialType}_${bandIdx}` : `${phaseKey}_${s.key}_${bandIdx}`;
-      if (!state.bookOverrides[overrideKey]) {
-        state.bookOverrides[overrideKey] = { title: rec.title, units: rec.units, unitLabel: rec.unitLabel };
-      }
-      const cur = state.bookOverrides[overrideKey];
-
-      row.innerHTML = `
-        <div class="book-subject">${s.label}</div>
-        <input type="text" class="book-title-input" value="${escapeAttr(cur.title)}" />
-        <div class="book-units-row">
-          <input type="number" class="book-units-input" min="1" value="${cur.units}" />
-          <span class="book-unit-label">${cur.unitLabel}（目安・調整可）</span>
-          <span class="book-pace"></span>
-        </div>`;
-      booksWrap.appendChild(row);
-
-      const titleInput = row.querySelector('.book-title-input');
-      const unitsInput = row.querySelector('.book-units-input');
-      const paceEl = row.querySelector('.book-pace');
-      function updatePace() {
-        const totalDays = weekCount * 7;
-        const units = parseFloat(unitsInput.value) || 0;
-        const pace = totalDays > 0 ? units / totalDays : 0;
-        paceEl.textContent = `1日 ${pace.toFixed(pace < 1 ? 2 : 1)} ${cur.unitLabel}`;
-      }
-      titleInput.addEventListener('input', (e) => { state.bookOverrides[overrideKey].title = e.target.value; });
-      unitsInput.addEventListener('input', (e) => {
-        state.bookOverrides[overrideKey].units = parseFloat(e.target.value) || 0;
-        updatePace();
-      });
-      updatePace();
-    });
-    card.appendChild(booksWrap);
-
-    return card;
   }
 
   $('btn-generate').addEventListener('click', generate);
