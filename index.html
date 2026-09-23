@@ -114,6 +114,18 @@
     background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
     border-radius: 10px; padding: 14px; font-size: .85rem; line-height: 1.7; margin-bottom: 18px;
   }
+
+  .book-section { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+  .book-section-title { font-size: .78rem; font-weight: 700; color: var(--text-sub); margin-bottom: 10px; }
+  .book-row { margin-bottom: 12px; }
+  .book-row:last-child { margin-bottom: 0; }
+  .book-subject { font-size: .78rem; font-weight: 700; color: var(--primary-dark); margin-bottom: 4px; }
+  .book-title-input { font-size: .84rem !important; padding: 9px 10px !important; margin-bottom: 6px; }
+  .book-units-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .book-units-input { width: 64px !important; padding: 7px !important; text-align: center; flex: none; }
+  .book-unit-label { font-size: .76rem; color: var(--text-sub); }
+  .book-pace { margin-left: auto; font-size: .8rem; font-weight: 700; color: var(--primary); }
+  .book-guidance { font-size: .82rem; color: var(--text-sub); line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -219,6 +231,7 @@
     subjectIncluded: { bio: true, chem: true, phys: false }, // 理科のみ対象科目トグルが必要
     subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, essay: null, interview: null },
     subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', essay: 'normal', interview: 'normal' },
+    bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
   };
 
   const $ = (id) => document.getElementById(id);
@@ -407,6 +420,52 @@
     return { found: lerp('found'), drill: lerp('drill'), polish: lerp('polish'), final: lerp('final') };
   }
 
+  // 参考書ルート：科目ごとに基礎固め期→演習期→総仕上げ期→直前期の4段階（PHASE_ORDERの並びに対応）
+  // 大学受験の主要参考書ルート（Web検索で標準的とされる組み合わせを確認済み、2026-09時点）。
+  // 総ユニット数はあくまで目安。実際の教材の分量に応じて画面上で調整できる
+  const PHASE_ORDER = ['found', 'drill', 'polish', 'final'];
+  const BOOK_DB = {
+    english: [
+      { title: '大岩のいちばんはじめの英文法 → システム英単語（基礎）', units: 60, unitLabel: 'レッスン' },
+      { title: 'システム英単語 → 英文解釈の技術70', units: 70, unitLabel: '単元' },
+      { title: 'レベル別英語長文問題集④⑤ → 竹岡の英作文講義', units: 50, unitLabel: '回' },
+      { title: '鉄緑会東大英単語熟語 鉄壁 → 志望校過去問演習', units: 40, unitLabel: '回' },
+    ],
+    math: [
+      { title: '基礎問題精講（数学I・A/II・B）', units: 150, unitLabel: '例題' },
+      { title: '1対1対応の演習', units: 120, unitLabel: '例題' },
+      { title: 'やさしい理系数学 / 標準問題精講', units: 100, unitLabel: '問' },
+      { title: '志望校別過去問演習', units: 40, unitLabel: '回' },
+    ],
+    chem: [
+      { title: '教科書内容の再確認＋リードLight化学', units: 80, unitLabel: '単元' },
+      { title: '化学基礎問題精講', units: 100, unitLabel: '問' },
+      { title: '化学重要問題集（標準編）', units: 120, unitLabel: '問' },
+      { title: '化学の新演習・志望校過去問', units: 40, unitLabel: '回' },
+    ],
+    phys: [
+      { title: '物理のエッセンス（力学・波動）', units: 80, unitLabel: '問' },
+      { title: '物理のエッセンス（熱・電磁気・原子）＋良問の風', units: 90, unitLabel: '問' },
+      { title: '名問の森', units: 100, unitLabel: '問' },
+      { title: '志望校別過去問演習', units: 40, unitLabel: '回' },
+    ],
+    bio: [
+      { title: '教科書内容の再確認＋リードLight生物', units: 80, unitLabel: '単元' },
+      { title: '生物基礎問題精講', units: 90, unitLabel: '問' },
+      { title: '生物重要問題集', units: 120, unitLabel: '問' },
+      { title: '標準問題精講 生物・志望校過去問', units: 40, unitLabel: '回' },
+    ],
+  };
+  // 小論文・面接は「教材を1冊仕上げる」型のペース配分にそぐわないため、固定の練習ガイダンスを表示する
+  const SUBJECT_GUIDANCE = {
+    essay: '週1本、志望校の過去問テーマで答案を書き、添削を受ける。',
+    interview: '月1回、想定質問（志望動機・医療系時事等）で模擬面接を行う。',
+  };
+
+  function escapeAttr(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
   const PHASE_META = {
     found:  { name: '基礎固め期',   desc: '教科書レベルの抜け・漏れを潰す期間。苦手科目を中心に、土台を作り直すことに時間を使う。' },
     drill:  { name: '演習期',       desc: '基礎を土台に、問題演習量を増やして得点力をつける期間。苦手科目の比重は残しつつ、実戦形式の演習を増やす。' },
@@ -566,6 +625,58 @@
           <span class="pct">${s.pct}%</span>`;
         barsWrap.appendChild(row);
       });
+
+    const booksWrap = document.createElement('div');
+    booksWrap.className = 'book-section';
+    booksWrap.innerHTML = '<div class="book-section-title">このフェーズで使う教材・1日の目安ペース</div>';
+    const phaseIdx = PHASE_ORDER.indexOf(phaseKey);
+    allocations.forEach((s) => {
+      const row = document.createElement('div');
+      row.className = 'book-row';
+
+      if (SUBJECT_GUIDANCE[s.key]) {
+        row.innerHTML = `<div class="book-subject">${s.label}</div><div class="book-guidance">${SUBJECT_GUIDANCE[s.key]}</div>`;
+        booksWrap.appendChild(row);
+        return;
+      }
+
+      const db = BOOK_DB[s.key];
+      if (!db) return;
+      const rec = db[Math.min(phaseIdx, db.length - 1)];
+      const overrideKey = `${phaseKey}_${s.key}`;
+      if (!state.bookOverrides[overrideKey]) {
+        state.bookOverrides[overrideKey] = { title: rec.title, units: rec.units, unitLabel: rec.unitLabel };
+      }
+      const cur = state.bookOverrides[overrideKey];
+
+      row.innerHTML = `
+        <div class="book-subject">${s.label}</div>
+        <input type="text" class="book-title-input" value="${escapeAttr(cur.title)}" />
+        <div class="book-units-row">
+          <input type="number" class="book-units-input" min="1" value="${cur.units}" />
+          <span class="book-unit-label">${cur.unitLabel}（目安・調整可）</span>
+          <span class="book-pace"></span>
+        </div>`;
+      booksWrap.appendChild(row);
+
+      const titleInput = row.querySelector('.book-title-input');
+      const unitsInput = row.querySelector('.book-units-input');
+      const paceEl = row.querySelector('.book-pace');
+      function updatePace() {
+        const totalDays = weekCount * 7;
+        const units = parseFloat(unitsInput.value) || 0;
+        const pace = totalDays > 0 ? units / totalDays : 0;
+        paceEl.textContent = `1日 ${pace.toFixed(pace < 1 ? 2 : 1)} ${cur.unitLabel}`;
+      }
+      titleInput.addEventListener('input', (e) => { state.bookOverrides[overrideKey].title = e.target.value; });
+      unitsInput.addEventListener('input', (e) => {
+        state.bookOverrides[overrideKey].units = parseFloat(e.target.value) || 0;
+        updatePace();
+      });
+      updatePace();
+    });
+    card.appendChild(booksWrap);
+
     return card;
   }
 
