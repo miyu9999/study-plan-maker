@@ -151,6 +151,14 @@
         <label class="field-label">志望校（任意・記録用）</label>
         <input type="text" id="school-input" placeholder="例：〇〇大学医学部" />
       </div>
+      <div class="field">
+        <label class="field-label">志望校の難易度帯</label>
+        <div class="seg" id="school-tier-seg">
+          <button type="button" data-val="competitive" class="active">難関〜最難関（旧帝大・上位私立等）</button>
+          <button type="button" data-val="standard">標準（地方国公立・中堅私立等）</button>
+        </div>
+        <div class="hint">参考書ルートをどのレベルまで進めるかに反映されます（標準は早慶レベルの教材までは進めません）。</div>
+      </div>
     </div>
 
     <div class="card">
@@ -224,6 +232,7 @@
   const state = {
     examType: 'general',   // general | henyu
     school: '',
+    schoolTier: 'competitive', // competitive（難関〜最難関）| standard（標準）：参考書ルートの到達目標に反映
     periodMode: 'date',    // date | weeks
     examDate: '',
     weeksDirect: null,
@@ -266,6 +275,7 @@
   }
 
   wireSeg('exam-type-seg', (val) => { state.examType = val; renderSubjectList(); });
+  wireSeg('school-tier-seg', (val) => { state.schoolTier = val; });
   wireSeg('period-mode-seg', (val) => {
     state.periodMode = val;
     $('period-date-field').classList.toggle('hidden', val !== 'date');
@@ -539,6 +549,24 @@
     interview: '月1回、想定質問（志望動機・医療系時事等）で模擬面接を行う。',
   };
 
+  // 参考書は「今何フェーズ目か」だけでなく「その科目の絶対偏差値」からスタート地点を決める。
+  // 既に得意な科目は基礎の本を素通りし、苦手な科目は基礎からしっかり積む。
+  // 志望校の難易度帯は「どこまでのレベルの教材まで進める必要があるか（到達上限）」に反映する
+  function startBandFromAbsScore(abs) {
+    if (abs < 45) return 0;
+    if (abs < 55) return 1;
+    if (abs < 65) return 2;
+    return 3;
+  }
+  const SCHOOL_TIER_TARGET_BAND = { competitive: 3, standard: 2 };
+  function bookBandForPhase(abs, phaseIdx, db) {
+    const maxIdx = db.length - 1;
+    if (phaseIdx === maxIdx) return maxIdx; // 直前期は常に志望校過去問演習
+    const startBand = Math.min(startBandFromAbsScore(abs), maxIdx);
+    const targetBand = Math.min(SCHOOL_TIER_TARGET_BAND[state.schoolTier] ?? maxIdx, maxIdx);
+    return Math.min(startBand + phaseIdx, targetBand);
+  }
+
   function escapeAttr(str) {
     return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
@@ -615,11 +643,15 @@
     return Object.keys(SUBJECT_META)
       .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
       .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
-      .map((k) => ({
-        key: k,
-        label: k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label,
-        delta: getSubjectDelta(k, overallScore),
-      }));
+      .map((k) => {
+        const delta = getSubjectDelta(k, overallScore);
+        return {
+          key: k,
+          label: k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label,
+          delta,
+          abs: overallScore + delta, // 科目の絶対偏差値相当（参考書の開始レベル判定に使う）
+        };
+      });
   }
 
   function subjectAllocationForPhase(phaseKey, subjects) {
@@ -723,8 +755,9 @@
 
       const db = s.key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[s.key];
       if (!db) return;
-      const rec = db[Math.min(phaseIdx, db.length - 1)];
-      const overrideKey = s.key === 'social' ? `${phaseKey}_social_${state.socialType}` : `${phaseKey}_${s.key}`;
+      const bandIdx = bookBandForPhase(s.abs, phaseIdx, db);
+      const rec = db[bandIdx];
+      const overrideKey = s.key === 'social' ? `${phaseKey}_social_${state.socialType}_${bandIdx}` : `${phaseKey}_${s.key}_${bandIdx}`;
       if (!state.bookOverrides[overrideKey]) {
         state.bookOverrides[overrideKey] = { title: rec.title, units: rec.units, unitLabel: rec.unitLabel };
       }
