@@ -199,7 +199,7 @@
       <h2>4. 得意・苦手科目</h2>
       <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
       <div id="subject-list"></div>
-      <div class="hint">理科は「含める」のチェックを外すと計画から外れます。編入の場合は小論文・面接も含みます。</div>
+      <div class="hint">理科・国語・社会は「含める」のチェックを外すと計画から外れます。国語・社会は国公立の共通テスト対策用（一般受験のみ）。編入の場合は小論文・面接も含みます。</div>
     </div>
 
     <button class="btn-primary" id="btn-generate">学習計画を作成する</button>
@@ -228,9 +228,9 @@
     levelMode: 'hensachi', // hensachi | category
     overallHensachi: null,
     overallCategory: 'blank', // blank | shaky | ok | applied（模試未受験時の全体レベル）
-    subjectIncluded: { bio: true, chem: true, phys: false }, // 理科のみ対象科目トグルが必要
-    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, essay: null, interview: null },
-    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', essay: 'normal', interview: 'normal' },
+    subjectIncluded: { bio: true, chem: true, phys: false, japanese: false, social: false }, // 任意科目のみ対象トグルが必要
+    subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, japanese: null, social: null, essay: null, interview: null },
+    subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', japanese: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
     bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
   };
 
@@ -242,6 +242,8 @@
     bio:       { label: '生物',   required: false },
     chem:      { label: '化学',   required: false },
     phys:      { label: '物理',   required: false },
+    japanese:  { label: '国語',   required: false, generalOnly: true }, // 国公立医学部の共通テストで必要。編入では基本不要
+    social:    { label: '社会（地理）', required: false, generalOnly: true }, // 同上
     essay:     { label: '小論文', required: true, henyuOnly: true },
     interview: { label: '面接',   required: true, henyuOnly: true },
   };
@@ -320,7 +322,9 @@
       : '各科目について、自分の中での得意・苦手を選んでください。';
 
     const isHenyu = state.examType === 'henyu';
-    const keys = Object.keys(SUBJECT_META).filter((k) => !SUBJECT_META[k].henyuOnly || isHenyu);
+    const keys = Object.keys(SUBJECT_META).filter((k) =>
+      (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu)
+    );
     const wrap = $('subject-list');
     wrap.innerHTML = '';
     keys.forEach((key) => {
@@ -421,39 +425,52 @@
   }
 
   // 参考書ルート：科目ごとに基礎固め期→演習期→総仕上げ期→直前期の4段階（PHASE_ORDERの並びに対応）
-  // 大学受験の主要参考書ルート（Web検索で標準的とされる組み合わせを確認済み、2026-09時点）。
+  // 武田塾（逆転合格.com、基礎徹底/日大/MARCH・地方国公立/早慶・難関国公立レベル別ルート）の公開情報を
+  // 2026-09時点でWeb確認し、レベルの並びを4フェーズにマッピングして採用。
   // 総ユニット数はあくまで目安。実際の教材の分量に応じて画面上で調整できる
   const PHASE_ORDER = ['found', 'drill', 'polish', 'final'];
   const BOOK_DB = {
     english: [
-      { title: '大岩のいちばんはじめの英文法 → システム英単語（基礎）', units: 60, unitLabel: 'レッスン' },
-      { title: 'システム英単語 → 英文解釈の技術70', units: 70, unitLabel: '単元' },
-      { title: 'レベル別英語長文問題集④⑤ → 竹岡の英作文講義', units: 50, unitLabel: '回' },
-      { title: '鉄緑会東大英単語熟語 鉄壁 → 志望校過去問演習', units: 40, unitLabel: '回' },
+      { title: 'システム英単語(中学版) → 大岩のいちばんはじめの英文法 超基礎文法編', units: 60, unitLabel: 'レッスン' },
+      { title: 'システム英単語 → 関正生の英文法ポラリス1 → 高校英文読解をひとつひとつわかりやすく', units: 70, unitLabel: '単元' },
+      { title: '英語長文レベル別問題集3標準編 → 関正生の英語長文ポラリス', units: 50, unitLabel: '回' },
+      { title: '英文法・語法 Vintage → 志望校過去問演習', units: 40, unitLabel: '回' },
     ],
     math: [
-      { title: '基礎問題精講（数学I・A/II・B）', units: 150, unitLabel: '例題' },
-      { title: '1対1対応の演習', units: 120, unitLabel: '例題' },
-      { title: 'やさしい理系数学 / 標準問題精講', units: 100, unitLabel: '問' },
-      { title: '志望校別過去問演習', units: 40, unitLabel: '回' },
+      { title: '数学入門問題精講 → 数学基礎問題精講', units: 100, unitLabel: '例題' },
+      { title: '数学Ⅲ・C基礎問題精講 → 大学入試数学 落とせない必須101題', units: 90, unitLabel: '例題' },
+      { title: '解法のエウレカ → 国公立標準問題集CanPass', units: 80, unitLabel: '問' },
+      { title: '実戦数学重要問題集 → 志望校別過去問演習', units: 50, unitLabel: '回' },
     ],
     chem: [
-      { title: '教科書内容の再確認＋リードLight化学', units: 80, unitLabel: '単元' },
-      { title: '化学基礎問題精講', units: 100, unitLabel: '問' },
-      { title: '化学重要問題集（標準編）', units: 120, unitLabel: '問' },
-      { title: '化学の新演習・志望校過去問', units: 40, unitLabel: '回' },
+      { title: '宇宙一わかりやすい高校化学（理論・無機・有機）', units: 70, unitLabel: '単元' },
+      { title: 'リードLightノート化学 → 全レベル問題集化学2 共通テストレベル', units: 90, unitLabel: '問' },
+      { title: '化学重要問題集 A問題', units: 100, unitLabel: '問' },
+      { title: '化学の新研究・新演習 → 化学標準問題精講', units: 50, unitLabel: '問' },
     ],
     phys: [
-      { title: '物理のエッセンス（力学・波動）', units: 80, unitLabel: '問' },
-      { title: '物理のエッセンス（熱・電磁気・原子）＋良問の風', units: 90, unitLabel: '問' },
-      { title: '名問の森', units: 100, unitLabel: '問' },
-      { title: '志望校別過去問演習', units: 40, unitLabel: '回' },
+      { title: '秘伝の物理 インプット講義（力学・波動／電磁気・熱・原子）', units: 70, unitLabel: '単元' },
+      { title: '高校これでわかる基礎問題集 → 物理入門問題精講', units: 80, unitLabel: '問' },
+      { title: '全レベル問題集物理2 共通テストレベル → 良問の風', units: 90, unitLabel: '問' },
+      { title: '名問の森（力学・熱・波動1 / 波動Ⅱ・電磁気・原子）', units: 50, unitLabel: '問' },
     ],
     bio: [
-      { title: '教科書内容の再確認＋リードLight生物', units: 80, unitLabel: '単元' },
-      { title: '生物基礎問題精講', units: 90, unitLabel: '問' },
-      { title: '生物重要問題集', units: 120, unitLabel: '問' },
-      { title: '標準問題精講 生物・志望校過去問', units: 40, unitLabel: '回' },
+      { title: 'リードLightノート生物基礎・生物', units: 70, unitLabel: '単元' },
+      { title: '全レベル問題集生物1 基礎レベル', units: 90, unitLabel: '問' },
+      { title: '全レベル問題集生物 標準レベル', units: 100, unitLabel: '問' },
+      { title: '全レベル問題集生物4 私大上位・国公立上位レベル', units: 50, unitLabel: '問' },
+    ],
+    japanese: [
+      { title: '国語力を伸ばす語彙1700 → ゼロから覚醒 はじめよう現代文', units: 60, unitLabel: '回' },
+      { title: '新・現代文レベル別問題集1超基礎編 → 2初級編', units: 70, unitLabel: '回' },
+      { title: '新・現代文レベル別問題集3標準編 → きめる！共通テスト現代文', units: 60, unitLabel: '回' },
+      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
+    ],
+    social: [
+      { title: '宇野の最速でわかる地理（系統地理編／地誌編）', units: 60, unitLabel: '単元' },
+      { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 50, unitLabel: '単元' },
+      { title: '共通テスト集中講義 地理 → 地図・統計の考察問題80', units: 50, unitLabel: '回' },
+      { title: '共通テスト過去問・実戦問題集（地理）', units: 30, unitLabel: '回' },
     ],
   };
   // 小論文・面接は「教材を1冊仕上げる」型のペース配分にそぐわないため、固定の練習ガイダンスを表示する
@@ -536,7 +553,7 @@
     const isHenyu = state.examType === 'henyu';
     const overallScore = getOverallScore();
     return Object.keys(SUBJECT_META)
-      .filter((k) => !SUBJECT_META[k].henyuOnly || isHenyu)
+      .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
       .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
       .map((k) => ({ key: k, label: SUBJECT_META[k].label, delta: getSubjectDelta(k, overallScore) }));
   }
