@@ -70,6 +70,7 @@
   .include-toggle { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--text-sub); white-space: nowrap; }
   .include-toggle input { width: 16px; height: 16px; }
   .hensachi-input { width: 72px !important; text-align: center; padding: 8px !important; flex: none; }
+  .social-type-select { width: auto !important; padding: 8px 10px !important; font-size: .8rem !important; flex: none; }
   .level-seg { flex: 1; min-width: 180px; }
   .level-seg button { padding: 8px 4px; font-size: .78rem; }
 
@@ -229,6 +230,7 @@
     overallHensachi: null,
     overallCategory: 'blank', // blank | shaky | ok | applied（模試未受験時の全体レベル）
     subjectIncluded: { bio: true, chem: true, phys: false, japanese: false, social: false }, // 任意科目のみ対象トグルが必要
+    socialType: 'geography', // geography | japanese_history | world_history | ethics_politics
     subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, japanese: null, social: null, essay: null, interview: null },
     subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', japanese: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
     bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
@@ -243,7 +245,7 @@
     chem:      { label: '化学',   required: false },
     phys:      { label: '物理',   required: false },
     japanese:  { label: '国語',   required: false, generalOnly: true }, // 国公立医学部の共通テストで必要。編入では基本不要
-    social:    { label: '社会（地理）', required: false, generalOnly: true }, // 同上
+    social:    { label: '社会',   required: false, generalOnly: true }, // 同上。日本史/世界史/地理/倫理政経から選択
     essay:     { label: '小論文', required: true, henyuOnly: true },
     interview: { label: '面接',   required: true, henyuOnly: true },
   };
@@ -338,6 +340,9 @@
       if (!meta.required) {
         controlsHtml += `<label class="include-toggle"><input type="checkbox" class="include-check" ${included ? 'checked' : ''}/> 含める</label>`;
       }
+      if (included && key === 'social') {
+        controlsHtml += `<select class="social-type-select">${Object.entries(SOCIAL_TYPE_LABEL).map(([val, label]) => `<option value="${val}" ${state.socialType === val ? 'selected' : ''}>${label}</option>`).join('')}</select>`;
+      }
       if (included) {
         if (state.levelMode === 'hensachi') {
           const v = state.subjectHensachi[key];
@@ -357,6 +362,10 @@
           state.subjectIncluded[key] = e.target.checked;
           renderSubjectList();
         });
+      }
+      const socialTypeEl = row.querySelector('.social-type-select');
+      if (socialTypeEl) {
+        socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
       }
       const hensachiEl = row.querySelector('.hensachi-input');
       if (hensachiEl) {
@@ -461,16 +470,43 @@
       { title: '全レベル問題集生物4 私大上位・国公立上位レベル', units: 50, unitLabel: '問' },
     ],
     japanese: [
-      { title: '国語力を伸ばす語彙1700 → ゼロから覚醒 はじめよう現代文', units: 60, unitLabel: '回' },
-      { title: '新・現代文レベル別問題集1超基礎編 → 2初級編', units: 70, unitLabel: '回' },
-      { title: '新・現代文レベル別問題集3標準編 → きめる！共通テスト現代文', units: 60, unitLabel: '回' },
-      { title: '共通テスト実戦問題集・実戦模試（国語）', units: 30, unitLabel: '回' },
+      { title: '現代文：語彙1700・ゼロから覚醒はじめよう現代文 ／ 古文：重要古文単語315・古典文法をはじめからていねいに ／ 漢文：漢文早覚え速答法', units: 60, unitLabel: '回' },
+      { title: '現代文：新・現代文レベル別問題集1→2 ／ 古文：富井の古文読解をはじめからていねいに ／ 漢文：ステップアップノート10漢文句形ドリル', units: 70, unitLabel: '回' },
+      { title: '現代文：新・現代文レベル別問題集3標準編・きめる！共通テスト現代文 ／ 古文：古文レベル別問題集2→3・共通テスト古文のスゴ技 ／ 漢文：共通テスト漢文のスゴ技', units: 60, unitLabel: '回' },
+      { title: '共通テスト実戦問題集・実戦模試（国語＝現代文・古文・漢文セット）', units: 30, unitLabel: '回' },
     ],
-    social: [
+  };
+  // 社会は選択科目により参考書ルートが大きく異なるため、科目タイプ別に用意する
+  const SOCIAL_TYPE_LABEL = {
+    geography: '地理',
+    japanese_history: '日本史',
+    world_history: '世界史',
+    ethics_politics: '倫理・政治経済',
+  };
+  const SOCIAL_BOOK_DB = {
+    geography: [
       { title: '宇野の最速でわかる地理（系統地理編／地誌編）', units: 60, unitLabel: '単元' },
       { title: '地理総合，地理探究の点数が面白いほどとれる本', units: 50, unitLabel: '単元' },
       { title: '共通テスト集中講義 地理 → 地図・統計の考察問題80', units: 50, unitLabel: '回' },
       { title: '共通テスト過去問・実戦問題集（地理）', units: 30, unitLabel: '回' },
+    ],
+    japanese_history: [
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本（原始・古代史／中世・近世史）', units: 60, unitLabel: '単元' },
+      { title: '金谷の日本史「なぜ」と「流れ」がわかる本（近現代史）→ 時代と流れで覚える！日本史用語', units: 60, unitLabel: '単元' },
+      { title: '共通テスト新課程攻略問題集 歴史総合，日本史探究', units: 50, unitLabel: '回' },
+      { title: '共通テスト過去問・実戦問題集・実戦模試（日本史）', units: 30, unitLabel: '回' },
+    ],
+    world_history: [
+      { title: 'きめる！共通テスト歴史総合＋世界史探求 → 金谷の歴史総合 なぜと流れがわかる本', units: 60, unitLabel: '単元' },
+      { title: '時代と流れで覚える！世界史用語', units: 60, unitLabel: '単元' },
+      { title: '共通テスト新課程攻略問題集 歴史総合，世界史探究', units: 50, unitLabel: '回' },
+      { title: '共通テスト過去問・実戦問題集・実戦模試（世界史）', units: 30, unitLabel: '回' },
+    ],
+    ethics_politics: [
+      { title: '蔭山のセンター倫理 → 蔭山のセンター政治・経済', units: 60, unitLabel: '単元' },
+      { title: '清水の新政治攻略・新経済攻略 → 倫理基本問題集', units: 60, unitLabel: '単元' },
+      { title: 'マーク式基礎問題集 倫理／政治経済 → 共通テスト政治・経済集中講義', units: 50, unitLabel: '回' },
+      { title: '共通テスト過去問・マーク式総合問題集（倫理、政治・経済）', units: 30, unitLabel: '回' },
     ],
   };
   // 小論文・面接は「教材を1冊仕上げる」型のペース配分にそぐわないため、固定の練習ガイダンスを表示する
@@ -555,7 +591,11 @@
     return Object.keys(SUBJECT_META)
       .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
       .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
-      .map((k) => ({ key: k, label: SUBJECT_META[k].label, delta: getSubjectDelta(k, overallScore) }));
+      .map((k) => ({
+        key: k,
+        label: k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label,
+        delta: getSubjectDelta(k, overallScore),
+      }));
   }
 
   function subjectAllocationForPhase(phaseKey, subjects) {
@@ -657,10 +697,10 @@
         return;
       }
 
-      const db = BOOK_DB[s.key];
+      const db = s.key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[s.key];
       if (!db) return;
       const rec = db[Math.min(phaseIdx, db.length - 1)];
-      const overrideKey = `${phaseKey}_${s.key}`;
+      const overrideKey = s.key === 'social' ? `${phaseKey}_social_${state.socialType}` : `${phaseKey}_${s.key}`;
       if (!state.bookOverrides[overrideKey]) {
         state.bookOverrides[overrideKey] = { title: rec.title, units: rec.units, unitLabel: rec.unitLabel };
       }
