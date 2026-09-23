@@ -230,7 +230,7 @@
     overallHensachi: null,
     overallCategory: 'blank', // blank | shaky | ok | applied（模試未受験時の全体レベル）
     subjectIncluded: { bio: true, chem: true, phys: false, japanese: false, social: false }, // 任意科目のみ対象トグルが必要
-    socialType: 'geography', // geography | japanese_history | world_history | ethics_politics
+    socialType: 'geography', // geography | japanese_history | world_history | ethics | politics_economy
     subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, japanese: null, social: null, essay: null, interview: null },
     subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', japanese: 'normal', social: 'normal', essay: 'normal', interview: 'normal' },
     bookOverrides: {}, // `${phaseKey}_${subjectKey}` -> { title, units, unitLabel }（教材の手入力・上書き）
@@ -477,13 +477,14 @@
     ],
   };
   // 社会は選択科目により参考書ルートが大きく異なるため、科目タイプ別に用意する
+  // 2025年開始の新課程共通テストでは「現代社会」廃止・「公共」必修化に伴い、公民は「公共，倫理」「公共，政治・経済」の2択のみ
+  // （旧課程の統合科目「倫理，政治・経済」はもう存在しない）
   const SOCIAL_TYPE_LABEL = {
     geography: '地理',
     japanese_history: '日本史',
     world_history: '世界史',
     ethics: '公共・倫理',
     politics_economy: '公共・政治経済',
-    ethics_politics: '倫理・政治経済（統合科目）',
   };
   const SOCIAL_BOOK_DB = {
     geography: [
@@ -515,12 +516,6 @@
       { title: '共通テスト 政治・経済 集中講義', units: 50, unitLabel: '単元' },
       { title: '共通テストへの道 政治・経済 問題と解説', units: 50, unitLabel: '回' },
       { title: '共通テスト過去問・ハンドブック公共、政治・経済 最短ルートで完全攻略', units: 30, unitLabel: '回' },
-    ],
-    ethics_politics: [
-      { title: '蔭山のセンター倫理 → 蔭山のセンター政治・経済', units: 60, unitLabel: '単元' },
-      { title: '清水の新政治攻略・新経済攻略 → 倫理基本問題集', units: 60, unitLabel: '単元' },
-      { title: 'マーク式基礎問題集 倫理／政治経済 → 共通テスト政治・経済集中講義', units: 50, unitLabel: '回' },
-      { title: '共通テスト過去問・マーク式総合問題集（倫理、政治・経済）', units: 30, unitLabel: '回' },
     ],
   };
   // 小論文・面接は「教材を1冊仕上げる」型のペース配分にそぐわないため、固定の練習ガイダンスを表示する
