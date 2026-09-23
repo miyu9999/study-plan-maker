@@ -145,6 +145,33 @@
     font-size: .72rem; font-weight: 700; color: var(--text-sub); margin: 10px 0 2px;
     padding-left: 8px; border-left: 3px solid var(--primary-light);
   }
+  .t-review { color: var(--text-sub); }
+
+  /* 週の進め方 */
+  .pace-input { width: 46px !important; padding: 6px !important; text-align: center; margin: 0 4px; }
+
+  /* 参考書リスト編集 */
+  .editor-line { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+  .editor-line:last-child { border-bottom: 0; }
+  .editor-check input { width: 18px; height: 18px; margin-top: 2px; }
+  .editor-main { flex: 1; min-width: 0; }
+  .editor-title { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: .84rem; font-weight: 600; }
+  .tiny-tag { font-size: .64rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--bg); color: var(--text-sub); }
+  .editor-amount { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: .74rem; color: var(--text-sub); margin-top: 5px; }
+  .editor-amount input { width: 62px !important; padding: 5px !important; text-align: center; font-size: .78rem !important; }
+  .ed-sep { margin-left: 4px; }
+  .add-book-btn {
+    margin-top: 10px; padding: 8px 14px; border-radius: 8px; border: 1.5px dashed var(--border);
+    background: transparent; color: var(--primary-dark); font-family: inherit; font-size: .8rem; font-weight: 700; cursor: pointer;
+  }
+  .add-book-btn:hover { border-color: var(--primary); background: var(--primary-light); }
+  .add-book-form { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; }
+  .add-book-form input, .add-book-form select { margin-bottom: 6px; font-size: .84rem !important; }
+  .nb-row { display: flex; gap: 6px; }
+  .nb-add {
+    flex: none; padding: 9px 16px; border-radius: 8px; border: 0; background: var(--primary); color: #fff;
+    font-family: inherit; font-size: .84rem; font-weight: 700; cursor: pointer; margin-bottom: 6px;
+  }
   .day-done { font-size: .78rem; color: var(--text-sub); }
 </style>
 </head>
@@ -166,16 +193,13 @@
         </div>
       </div>
       <div class="field">
-        <label class="field-label">志望校（任意・記録用）</label>
-        <input type="text" id="school-input" placeholder="例：〇〇大学医学部" />
+        <label class="field-label">志望校・学部（任意・記録用）</label>
+        <input type="text" id="school-input" placeholder="例：〇〇大学△△学部" />
       </div>
       <div class="field">
-        <label class="field-label">志望校の難易度帯</label>
-        <div class="seg" id="school-tier-seg">
-          <button type="button" data-val="competitive" class="active">難関〜最難関</button>
-          <button type="button" data-val="standard">標準</button>
-        </div>
-        <div class="hint">やるべき参考書のゴール地点が変わります（標準は最難関レベルの教材までは積みません）。</div>
+        <label class="field-label">志望校の偏差値</label>
+        <input type="number" id="school-hensachi-input" min="30" max="80" value="60" />
+        <div class="hint">その大学・学部の偏差値を入れてください。この値でやるべき参考書のゴール地点が決まります（〜49：標準レベルまで／50〜59：応用レベルまで／60〜：発展レベルまで）。</div>
       </div>
     </div>
 
@@ -235,7 +259,24 @@
       <div class="hint">「含める」を外した科目は計画から外れます。現代文・古文・漢文・社会は共通テスト対策用です。</div>
     </div>
 
-    <button class="btn-primary" id="btn-generate">学習計画を作成する</button>
+    <div class="card">
+      <h2>5. 週の進め方（科目ごと）</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px">1週間のうち何日を「参考書を進める日」に、何日を「復習日」に充てるかを決めます。武田塾式の「4日進んで2日復習・1日予備」が既定値です。</div>
+      <div id="pace-list"></div>
+    </div>
+
+    <button class="btn-primary" id="btn-to-books">参考書リストを作る</button>
+  </section>
+
+  <section id="screen-books" class="hidden">
+    <div class="result-header">
+      <div class="title">やるべき参考書</div>
+      <div class="meta" id="books-meta"></div>
+    </div>
+    <div class="hint" style="margin-bottom:14px">志望校の偏差値と科目ごとの偏差値から自動で選びました。使わない本はチェックを外し、手持ちの本は「追加」から入れてください。分量は実物に合わせて調整できます。</div>
+    <div id="book-editor"></div>
+    <button class="btn-primary" id="btn-generate">この内容で計画を作る</button>
+    <button class="btn-secondary" id="btn-back-form">条件を変える</button>
   </section>
 
   <section id="screen-result" class="hidden">
@@ -260,6 +301,7 @@
       <div id="calendar"></div>
     </div>
 
+    <button class="btn-secondary" id="btn-back-books">参考書を選び直す</button>
     <button class="btn-secondary" id="btn-edit">条件を変えてもう一度</button>
   </section>
 </main>
@@ -271,7 +313,7 @@
   const state = {
     examType: 'general',
     school: '',
-    schoolTier: 'competitive', // competitive | standard
+    schoolHensachi: 60, // 志望校の偏差値。やるべき参考書のゴール地点を決める
     periodMode: 'date',
     examDate: '',
     weeksDirect: null,
@@ -279,18 +321,22 @@
     levelMode: 'hensachi',
     overallHensachi: null,
     overallCategory: 'blank',
-    subjectIncluded: { bio: true, chem: true, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false },
+    subjectIncluded: { english: true, math: true, bio: false, chem: false, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false },
     socialType: 'geography',
     subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, gendaibun: null, kobun: null, kanbun: null, social: null },
     subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', gendaibun: 'normal', kobun: 'normal', kanbun: 'normal', social: 'normal' },
+    // 科目ごとの週の進め方（武田塾式の4日進んで2日復習・1日予備が既定）
+    subjectPace: {},
+    bookSelection: null, // 参考書リスト編集画面で確定した内容
   };
+  const DEFAULT_PACE = { advance: 4, review: 2 };
 
   const $ = (id) => document.getElementById(id);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
   const SUBJECT_META = {
-    english:   { label: '英語',   required: true },
-    math:      { label: '数学',   required: true },
+    english:   { label: '英語',   required: false },
+    math:      { label: '数学',   required: false },
     bio:       { label: '生物',   required: false },
     chem:      { label: '化学',   required: false },
     phys:      { label: '物理',   required: false },
@@ -452,7 +498,13 @@
     ok: '基礎はできる（応用に穴がある）',
     applied: '応用・過去問演習ができる',
   };
-  const SCHOOL_TIER_TARGET_BAND = { competitive: 3, standard: 2 };
+  // 志望校の偏差値 → どのレベルの教材まで積む必要があるか
+  //   〜49：標準（日大レベル）まで／50〜59：応用（MARCH・地方国公立レベル）まで／60〜：発展（早慶・難関国公立レベル）まで
+  function targetBandFromSchoolHensachi(h) {
+    if (h < 50) return 1;
+    if (h < 60) return 2;
+    return 3;
+  }
 
   function getOverallScore() {
     if (state.levelMode === 'hensachi') return state.overallHensachi != null ? state.overallHensachi : 50;
@@ -481,7 +533,7 @@
     if (!db) return [];
     const startBand = startBandFromAbsScore(absScore);
     const maxBandInDb = Math.max(...db.map((b) => b.band));
-    const targetBand = Math.min(SCHOOL_TIER_TARGET_BAND[state.schoolTier], maxBandInDb);
+    const targetBand = Math.min(targetBandFromSchoolHensachi(state.schoolHensachi), maxBandInDb);
     const picked = db.filter((b) => b.band >= startBand && b.band <= targetBand);
     // 既にターゲットを超えている科目でも、仕上げ用に最低1冊は残す
     if (picked.length === 0) {
@@ -566,45 +618,103 @@
     return days;
   }
 
-  // 1本のトラック（教材の並び）を、与えられた日数範囲に順番に敷き詰める
-  function layTrack(books, dayFrom, dayCount, plan, spans) {
-    if (!books.length || dayCount <= 0) return;
-    const days = allocateDays(books, dayCount);
-    let cursor = dayFrom;
-    const limit = dayFrom + dayCount;
+  // 1本のトラック（教材の並び）を、与えられた「進む日」のリストに順番に敷き詰める
+  function layTrackOnDays(books, dayIndices, plan, spans) {
+    if (!books.length || dayIndices.length === 0) return;
+    const n = dayIndices.length;
+    const days = allocateDays(books, n);
+    let cursor = 0;
     books.forEach((b, i) => {
       const span = days[i];
-      const startDay = cursor;
-      for (let k = 0; k < span && cursor < limit; k++, cursor++) {
+      const startPos = cursor;
+      for (let k = 0; k < span && cursor < n; k++, cursor++) {
         const from = Math.floor((k * b.units) / span) + 1;
         const to = Math.floor(((k + 1) * b.units) / span);
         // 1日1単元未満のペースの本では「その日に進む分がない日」が出る。同じ番号を連日出さない
-        if (to >= from) plan[cursor].push({ book: b, from, to });
+        if (to >= from) plan[dayIndices[cursor]].push({ book: b, from, to });
       }
-      spans.push({ book: b, startDay, endDay: Math.min(cursor, limit) - 1, days: span });
+      const endPos = Math.min(cursor, n) - 1;
+      if (endPos >= startPos) {
+        spans.push({ book: b, startDay: dayIndices[startPos], endDay: dayIndices[endPos], days: span });
+      }
     });
+  }
+
+  // 週のうち「進む日」「復習日」の曜日オフセットを返す（週の前半に進み、後半に復習、残りは予備日）
+  function weekPattern(pace) {
+    const advance = clamp(pace.advance, 1, 7);
+    const review = clamp(pace.review, 0, 7 - advance);
+    return { advance, review };
+  }
+
+  function advanceDayIndices(pace, dayFrom, dayCount) {
+    const { advance } = weekPattern(pace);
+    const out = [];
+    for (let d = dayFrom; d < dayFrom + dayCount; d++) {
+      if (d % 7 < advance) out.push(d);
+    }
+    // 進む日が1日も取れない極端に短い期間では全日を進む日として扱う
+    if (out.length === 0) for (let d = dayFrom; d < dayFrom + dayCount; d++) out.push(d);
+    return out;
+  }
+
+  // その週の「進む日」でやった範囲を集約し、復習日に割り当てる（復習の所要時間は初回の5割で見積もる）
+  function addReviewDays(plan, totalDays, pace) {
+    const { advance, review } = weekPattern(pace);
+    if (review === 0) return;
+    const weeks = Math.ceil(totalDays / 7);
+    for (let w = 0; w < weeks; w++) {
+      const base = w * 7;
+      const agg = new Map();
+      for (let o = 0; o < advance; o++) {
+        const d = base + o;
+        if (d >= totalDays) break;
+        plan[d].forEach((t) => {
+          if (t.isReview) return;
+          const key = t.book.title + t.book.cycleLabel;
+          if (!agg.has(key)) agg.set(key, { book: t.book, from: t.from, to: t.to });
+          else {
+            const a = agg.get(key);
+            a.from = Math.min(a.from, t.from);
+            a.to = Math.max(a.to, t.to);
+          }
+        });
+      }
+      if (agg.size === 0) continue;
+      const items = [...agg.values()];
+      const totalMin = items.reduce((s, i) => s + (i.to - i.from + 1) * i.book.min, 0);
+      for (let o = advance; o < advance + review; o++) {
+        const d = base + o;
+        if (d >= totalDays) break;
+        plan[d].push({ isReview: true, items, minutes: (totalMin * 0.5) / review });
+      }
+    }
   }
 
   // 科目ごとのスケジュール。
   //   暗記系（単語帳・用語集）＝全期間にわたって毎日並行
   //   メインライン（文法→解釈→長文、講義→演習）＝順番に1冊ずつ
   //   直前期は全科目まとめて志望校の過去問演習
-  function buildSubjectSchedule(key, absScore, subjectLabel, studyDays, pastExamDays, totalDays) {
-    const picked = booksForSubject(key, absScore);
+  function buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, subjectLabel) {
     const memorize = expandCycles(picked.filter((b) => b.track === 'memorize'));
     const main = expandCycles(picked.filter((b) => b.track !== 'memorize'));
     const pastExam = expandCycles([pastExamBook(subjectLabel)]);
 
     const plan = Array.from({ length: totalDays }, () => []);
     const spans = [];
-    // 暗記系とメインラインは同じ期間（0〜studyDays）を並行で走る
-    layTrack(memorize, 0, studyDays, plan, spans);
-    layTrack(main, 0, studyDays, plan, spans);
-    layTrack(pastExam, studyDays, pastExamDays, plan, spans);
+    // 暗記系とメインラインは同じ期間（0〜studyDays）を並行で走る。進むのは「進む日」だけ
+    const studyAdvanceDays = advanceDayIndices(pace, 0, studyDays);
+    const examAdvanceDays = advanceDayIndices(pace, studyDays, pastExamDays);
+    layTrackOnDays(memorize, studyAdvanceDays, plan, spans);
+    layTrackOnDays(main, studyAdvanceDays, plan, spans);
+    layTrackOnDays(pastExam, examAdvanceDays, plan, spans);
+    addReviewDays(plan, totalDays, pace);
 
     const allBooks = [...memorize, ...main, ...pastExam];
-    const totalMinutes = allBooks.reduce((a, b) => a + b.units * b.min, 0);
-    return { plan, spans, books: allBooks, hasMemorize: memorize.length > 0, totalMinutes };
+    const bookMinutes = allBooks.reduce((a, b) => a + b.units * b.min, 0);
+    let reviewMinutes = 0;
+    plan.forEach((items) => items.forEach((t) => { if (t.isReview) reviewMinutes += t.minutes; }));
+    return { plan, spans, books: allBooks, totalMinutes: bookMinutes + reviewMinutes };
   }
 
   // 直前期（過去問演習）に充てる日数
@@ -613,34 +723,68 @@
     return clamp(Math.round(totalDays * 0.15), 7, 45);
   }
 
+  // 対象科目の一覧（ラベルと偏差値つき）
+  function activeSubjectKeys() {
+    const isHenyu = state.examType === 'henyu';
+    return Object.keys(SUBJECT_META)
+      .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
+      .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k]);
+  }
+
+  function subjectLabelFor(k) {
+    return k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label;
+  }
+
+  function paceFor(k) {
+    return state.subjectPace[k] || { ...DEFAULT_PACE };
+  }
+
+  // 志望校偏差値と科目別偏差値から、やるべき参考書の候補を組み立てる（編集画面の初期値）
+  function buildCandidateBooks() {
+    const overallScore = getOverallScore();
+    const out = {};
+    activeSubjectKeys().forEach((k) => {
+      const abs = getSubjectAbsScore(k, overallScore);
+      out[k] = {
+        label: subjectLabelFor(k),
+        abs,
+        books: booksForSubject(k, abs).map((b) => ({ ...b, enabled: true })),
+      };
+    });
+    return out;
+  }
+
   function buildPlan() {
     const totalDays = getTotalDays();
     const pastExamDays = pastExamDaysFor(totalDays);
     const studyDays = Math.max(1, totalDays - pastExamDays);
     const overallScore = getOverallScore();
-    const isHenyu = state.examType === 'henyu';
+    const selection = state.bookSelection || buildCandidateBooks();
 
-    const subjects = Object.keys(SUBJECT_META)
-      .filter((k) => (!SUBJECT_META[k].henyuOnly || isHenyu) && (!SUBJECT_META[k].generalOnly || !isHenyu))
-      .filter((k) => SUBJECT_META[k].required || state.subjectIncluded[k])
-      .map((k) => {
-        const label = k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label;
-        const abs = getSubjectAbsScore(k, overallScore);
-        const schedule = buildSubjectSchedule(k, abs, label, studyDays, pastExamDays, totalDays);
-        return { key: k, label, abs, ...schedule };
-      });
+    const subjects = Object.keys(selection).map((k) => {
+      const entry = selection[k];
+      const picked = entry.books.filter((b) => b.enabled);
+      const pace = paceFor(k);
+      const schedule = buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, entry.label);
+      return { key: k, label: entry.label, abs: entry.abs, pace, ...schedule };
+    });
 
     // 1日ごとの負荷（分）
     const dailyMinutes = new Array(totalDays).fill(0);
     for (let d = 0; d < totalDays; d++) {
       subjects.forEach((s) => {
-        s.plan[d].forEach((t) => { dailyMinutes[d] += (t.to - t.from + 1) * t.book.min; });
+        s.plan[d].forEach((t) => {
+          dailyMinutes[d] += t.isReview ? t.minutes : (t.to - t.from + 1) * t.book.min;
+        });
       });
     }
     const requiredMinutes = subjects.reduce((a, s) => a + s.totalMinutes, 0);
     const avgMinutes = requiredMinutes / totalDays;
+    // 予備日（何も割り当てのない日）を除いた「実際に勉強する日」の平均。判定はこちらを使う
+    const workingDays = dailyMinutes.filter((m) => m > 0);
+    const workingAvgMinutes = workingDays.length ? workingDays.reduce((a, b) => a + b, 0) / workingDays.length : 0;
 
-    return { totalDays, studyDays, pastExamDays, subjects, dailyMinutes, requiredMinutes, avgMinutes, overallScore };
+    return { totalDays, studyDays, pastExamDays, subjects, dailyMinutes, requiredMinutes, avgMinutes, workingAvgMinutes, workingDayCount: workingDays.length, overallScore };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -657,8 +801,10 @@
     });
   }
 
-  wireSeg('exam-type-seg', (val) => { state.examType = val; renderSubjectList(); });
-  wireSeg('school-tier-seg', (val) => { state.schoolTier = val; });
+  wireSeg('exam-type-seg', (val) => { state.examType = val; renderSubjectList(); renderPaceList(); });
+  $('school-hensachi-input').addEventListener('input', (e) => {
+    state.schoolHensachi = e.target.value === '' ? 60 : parseFloat(e.target.value);
+  });
   wireSeg('period-mode-seg', (val) => {
     state.periodMode = val;
     $('period-date-field').classList.toggle('hidden', val !== 'date');
@@ -671,6 +817,41 @@
     $('level-category-field').classList.toggle('hidden', val !== 'category');
     renderSubjectList();
   });
+
+  // 科目ごとの「週に何日進む・何日復習するか」
+  function renderPaceList() {
+    const wrap = $('pace-list');
+    wrap.innerHTML = '';
+    const keys = activeSubjectKeys();
+    if (!keys.length) {
+      wrap.innerHTML = '<div class="hint" style="margin:0">科目を1つ以上選ぶとここに表示されます。</div>';
+      return;
+    }
+    keys.forEach((k) => {
+      const pace = paceFor(k);
+      const spare = Math.max(0, 7 - pace.advance - pace.review);
+      const row = document.createElement('div');
+      row.className = 'subject-row';
+      row.innerHTML = `
+        <span class="name">${subjectLabelFor(k)}</span>
+        <div class="row-controls">
+          <label class="include-toggle">進む<input type="number" class="pace-input pace-advance" min="1" max="7" value="${pace.advance}" />日</label>
+          <label class="include-toggle">復習<input type="number" class="pace-input pace-review" min="0" max="6" value="${pace.review}" />日</label>
+          <span class="include-toggle">予備${spare}日</span>
+        </div>`;
+      wrap.appendChild(row);
+      const adv = row.querySelector('.pace-advance');
+      const rev = row.querySelector('.pace-review');
+      const onChange = () => {
+        const a = clamp(parseInt(adv.value, 10) || 1, 1, 7);
+        const r = clamp(parseInt(rev.value, 10) || 0, 0, 7 - a);
+        state.subjectPace[k] = { advance: a, review: r };
+        renderPaceList();
+      };
+      adv.addEventListener('change', onChange);
+      rev.addEventListener('change', onChange);
+    });
+  }
   wireSeg('level-category-seg', (val) => { state.overallCategory = val; });
 
   $('school-input').addEventListener('input', (e) => { state.school = e.target.value; });
@@ -731,7 +912,7 @@
       wrap.appendChild(row);
 
       const checkEl = row.querySelector('.include-check');
-      if (checkEl) checkEl.addEventListener('change', (e) => { state.subjectIncluded[key] = e.target.checked; renderSubjectList(); });
+      if (checkEl) checkEl.addEventListener('change', (e) => { state.subjectIncluded[key] = e.target.checked; renderSubjectList(); renderPaceList(); });
       const socialTypeEl = row.querySelector('.social-type-select');
       if (socialTypeEl) socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
       const hensachiEl = row.querySelector('.hensachi-input');
@@ -751,6 +932,98 @@
     });
   }
   renderSubjectList();
+  renderPaceList();
+
+  // ═══════════════════════════════════════════════════════════
+  // 参考書リスト編集画面
+  // ═══════════════════════════════════════════════════════════
+  function renderBookEditor() {
+    const wrap = $('book-editor');
+    wrap.innerHTML = '';
+    const sel = state.bookSelection;
+    $('books-meta').textContent = `志望校偏差値${state.schoolHensachi} → ${BAND_LABEL[targetBandFromSchoolHensachi(state.schoolHensachi)]}レベルまで`;
+
+    Object.keys(sel).forEach((k) => {
+      const entry = sel[k];
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="sb-head">
+          <span class="sb-name">${entry.label}</span>
+          <span class="sb-meta">偏差値${Math.round(entry.abs)}相当</span>
+        </div>
+        <div class="editor-books"></div>
+        <button type="button" class="add-book-btn">＋ 参考書を追加</button>
+        <div class="add-book-form hidden">
+          <input type="text" class="nb-title" placeholder="参考書名" />
+          <div class="nb-row">
+            <input type="number" class="nb-units" placeholder="総量" min="1" />
+            <input type="text" class="nb-unit" placeholder="単位（問・章など）" />
+            <input type="number" class="nb-min" placeholder="1単位の分数" min="1" />
+          </div>
+          <div class="nb-row">
+            <select class="nb-track">
+              <option value="main">順番に進める（メイン）</option>
+              <option value="memorize">毎日並行（暗記系）</option>
+            </select>
+            <button type="button" class="nb-add">追加する</button>
+          </div>
+        </div>`;
+
+      const booksWrap = card.querySelector('.editor-books');
+      const renderBooks = () => {
+        booksWrap.innerHTML = '';
+        entry.books.forEach((b, i) => {
+          const line = document.createElement('div');
+          line.className = 'editor-line';
+          line.innerHTML = `
+            <label class="editor-check"><input type="checkbox" ${b.enabled ? 'checked' : ''} /></label>
+            <div class="editor-main">
+              <div class="editor-title">
+                <span class="band-tag">${BAND_LABEL[b.band]}</span>
+                <span>${b.title}</span>
+                ${b.track === 'memorize' ? '<span class="tiny-tag">毎日並行</span>' : ''}
+                ${b.cycles > 1 ? `<span class="tiny-tag">${b.cycles}周</span>` : ''}
+              </div>
+              <div class="editor-amount">
+                <input type="number" class="ed-units" min="1" value="${b.units}" /> ${b.unitLabel}
+                <span class="ed-sep">/ 1${b.unitLabel}あたり</span>
+                <input type="number" class="ed-min" min="1" value="${b.min}" /> 分
+              </div>
+            </div>`;
+          booksWrap.appendChild(line);
+          line.querySelector('input[type=checkbox]').addEventListener('change', (e) => { b.enabled = e.target.checked; });
+          line.querySelector('.ed-units').addEventListener('input', (e) => { b.units = Math.max(1, parseInt(e.target.value, 10) || 1); });
+          line.querySelector('.ed-min').addEventListener('input', (e) => { b.min = Math.max(1, parseInt(e.target.value, 10) || 1); });
+        });
+      };
+      renderBooks();
+
+      const form = card.querySelector('.add-book-form');
+      card.querySelector('.add-book-btn').addEventListener('click', () => form.classList.toggle('hidden'));
+      card.querySelector('.nb-add').addEventListener('click', () => {
+        const title = card.querySelector('.nb-title').value.trim();
+        const units = parseInt(card.querySelector('.nb-units').value, 10);
+        const unitLabel = card.querySelector('.nb-unit').value.trim() || '回';
+        const min = parseInt(card.querySelector('.nb-min').value, 10);
+        if (!title || !units || !min) { alert('参考書名・総量・1単位あたりの分数を入力してください。'); return; }
+        entry.books.push({
+          title, units, unitLabel, min,
+          band: targetBandFromSchoolHensachi(state.schoolHensachi),
+          track: card.querySelector('.nb-track').value,
+          enabled: true,
+        });
+        card.querySelector('.nb-title').value = '';
+        card.querySelector('.nb-units').value = '';
+        card.querySelector('.nb-unit').value = '';
+        card.querySelector('.nb-min').value = '';
+        form.classList.add('hidden');
+        renderBooks();
+      });
+
+      wrap.appendChild(card);
+    });
+  }
 
   // ═══════════════════════════════════════════════════════════
   // 結果描画
@@ -763,29 +1036,32 @@
   function renderVerdict(plan) {
     const wrap = $('verdict-wrap');
     const availMin = state.hoursPerDay * 60;
-    const ratio = plan.avgMinutes / (availMin || 1);
+    const ratio = plan.workingAvgMinutes / (availMin || 1);
     let cls, title, body;
     if (ratio <= 0.85) {
       cls = 'ok';
       title = '間に合う見込みです';
-      body = `今の設定なら、確保できる時間の範囲でこの参考書リストを終えられます。余裕分は過去問演習や苦手分野の追加演習に回せます。`;
+      body = '今の設定なら、確保できる時間の範囲でこの参考書リストを終えられます。余裕分は過去問演習や苦手分野の追加演習に回せます。';
     } else if (ratio <= 1.15) {
       cls = 'tight';
       title = 'ぎりぎり間に合う計算です';
-      body = `休んだ日の遅れを取り戻す余地がほとんどありません。勉強時間を増やすか、志望校の難易度帯・科目数を見直すと安全です。`;
+      body = '休んだ日の遅れを取り戻す余地がほとんどありません。勉強時間を増やすか、志望校の偏差値設定・科目数・復習日の配分を見直すと安全です。';
     } else {
       cls = 'ng';
       title = 'このままでは終わりません';
-      body = `必要な時間が確保できる時間を上回っています。①1日の勉強時間を増やす ②志望校の難易度帯を「標準」にする ③科目を減らす ④参考書の分量を実物に合わせて調整する、のいずれかが必要です。`;
+      body = '必要な時間が確保できる時間を上回っています。①1日の勉強時間を増やす ②参考書を減らす（前の画面でチェックを外す） ③科目を減らす ④週に進む日を増やす ⑤参考書の分量を実物に合わせて調整する、のいずれかが必要です。';
     }
     wrap.innerHTML = `
       <div class="verdict ${cls}">
         <div class="v-title">${title}</div>
         <div class="v-body">${body}</div>
         <div class="v-nums">
-          <span>必要な平均学習時間 <b>${fmtHours(plan.avgMinutes)}</b> 時間/日</span>
+          <span>勉強する日の平均 <b>${fmtHours(plan.workingAvgMinutes)}</b> 時間/日</span>
           <span>確保できる時間 <b>${state.hoursPerDay}</b> 時間/日</span>
           <span>総学習量 <b>${Math.round(plan.requiredMinutes / 60)}</b> 時間</span>
+        </div>
+        <div class="v-nums" style="opacity:.75">
+          <span>実際に勉強する日 ${plan.workingDayCount}日 / 全${plan.totalDays}日（残りは予備日）</span>
         </div>
       </div>`;
   }
@@ -862,6 +1138,13 @@
             const items = s.plan[d];
             if (!items.length) return null;
             const lines = items.map((t) => {
+              if (t.isReview) {
+                const detail = t.items.map((i) => {
+                  const r = i.from === i.to ? `${i.from}` : `${i.from}〜${i.to}`;
+                  return `${i.book.title}${i.book.cycleLabel} ${r}${i.book.unitLabel}`;
+                }).join('／');
+                return `<span class="t-item t-review">復習：${detail}</span>`;
+              }
               const range = t.from === t.to ? `${t.from}` : `${t.from}〜${t.to}`;
               return `<span class="t-item">${t.book.title}${t.book.cycleLabel} ${range}${t.book.unitLabel}</span>`;
             }).join('');
@@ -879,35 +1162,45 @@
     }
   }
 
-  function generate() {
+  function validateInputs() {
     const totalDays = getTotalDays();
-    if (!totalDays || totalDays < 1) { alert('残り期間を正しく入力してください。'); return; }
-    if (totalDays > 900) { alert('残り期間が長すぎます（900日以内で入力してください）。'); return; }
-    if (state.levelMode === 'hensachi' && state.overallHensachi == null) { alert('全体偏差値を入力してください。'); return; }
-    if (!state.hoursPerDay || state.hoursPerDay <= 0) { alert('1日の勉強時間を入力してください。'); return; }
+    if (!totalDays || totalDays < 1) { alert('残り期間を正しく入力してください。'); return false; }
+    if (totalDays > 900) { alert('残り期間が長すぎます（900日以内で入力してください）。'); return false; }
+    if (state.levelMode === 'hensachi' && state.overallHensachi == null) { alert('全体偏差値を入力してください。'); return false; }
+    if (!state.hoursPerDay || state.hoursPerDay <= 0) { alert('1日の勉強時間を入力してください。'); return false; }
+    if (activeSubjectKeys().length === 0) { alert('対象科目を1つ以上選んでください。'); return false; }
+    return true;
+  }
 
+  function showScreen(id) {
+    ['screen-form', 'screen-books', 'screen-result'].forEach((s) => {
+      $(s).classList.toggle('hidden', s !== id);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  function generate() {
     const plan = buildPlan();
-    if (plan.subjects.length === 0) { alert('対象科目を1つ以上選んでください。'); return; }
-
     const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
     $('result-school').textContent = state.school ? state.school : '志望校未入力';
-    $('result-meta').textContent = `${state.schoolTier === 'competitive' ? '難関〜最難関' : '標準'}・${levelLabelText}・本番まで${plan.totalDays}日`;
+    $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
 
     renderVerdict(plan);
     renderBookList(plan);
     renderCalendar(plan);
-
-    $('screen-form').classList.add('hidden');
-    $('screen-result').classList.remove('hidden');
-    window.scrollTo(0, 0);
+    showScreen('screen-result');
   }
 
-  $('btn-generate').addEventListener('click', generate);
-  $('btn-edit').addEventListener('click', () => {
-    $('screen-result').classList.add('hidden');
-    $('screen-form').classList.remove('hidden');
-    window.scrollTo(0, 0);
+  $('btn-to-books').addEventListener('click', () => {
+    if (!validateInputs()) return;
+    state.bookSelection = buildCandidateBooks();
+    renderBookEditor();
+    showScreen('screen-books');
   });
+  $('btn-generate').addEventListener('click', generate);
+  $('btn-back-form').addEventListener('click', () => showScreen('screen-form'));
+  $('btn-back-books').addEventListener('click', () => showScreen('screen-books'));
+  $('btn-edit').addEventListener('click', () => showScreen('screen-form'));
 </script>
 </body>
 </html>
