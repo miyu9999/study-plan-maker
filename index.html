@@ -153,6 +153,16 @@
   /* 週の進め方 */
   .pace-input { width: 46px !important; padding: 6px !important; text-align: center; margin: 0 4px; }
 
+  /* 今日やること */
+  .today-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+  .today-row:last-child { border-bottom: 0; }
+  .today-row.done { opacity: .5; }
+  .today-row.done .today-task { text-decoration: line-through; }
+  .today-check input { width: 22px; height: 22px; margin-top: 2px; }
+  .today-main { flex: 1; min-width: 0; }
+  .today-subject { font-size: .84rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 3px; }
+  .today-task { font-size: .84rem; line-height: 1.6; }
+
   .auto-note {
     background: var(--primary-light); border: 1px solid var(--border); border-radius: 10px;
     padding: 11px 13px; font-size: .78rem; line-height: 1.7; color: var(--primary-dark); margin-bottom: 14px;
@@ -190,7 +200,24 @@
 </header>
 
 <main>
-  <section id="screen-form">
+  <section id="screen-today" class="hidden">
+    <div class="result-header">
+      <div class="school" id="today-school"></div>
+      <div class="title" id="today-date"></div>
+      <div class="meta" id="today-meta"></div>
+    </div>
+    <div id="today-progress"></div>
+    <div class="card">
+      <h2>今日やること</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px">終わったらチェックを入れてください。遅れたら「今日から組み直す」で残りを割り直せます。</div>
+      <div id="today-tasks"></div>
+    </div>
+    <button class="btn-primary" id="btn-view-plan">計画全体を見る</button>
+    <button class="btn-secondary" id="btn-reschedule">遅れた分を今日から組み直す</button>
+    <button class="btn-secondary" id="btn-new-plan">条件を変えて作り直す</button>
+  </section>
+
+  <section id="screen-form" class="hidden">
     <div class="card">
       <h2>1. 志望校</h2>
       <!-- 医学部編入モードは一旦UIから非表示（一般受験に絞る方針）。コードは残してあるので復活可能 -->
@@ -318,6 +345,7 @@
       <div id="calendar"></div>
     </div>
 
+    <button class="btn-primary" id="btn-to-today">今日やることを見る</button>
     <button class="btn-secondary" id="btn-back-books">参考書を選び直す</button>
     <button class="btn-secondary" id="btn-edit">条件を変えてもう一度</button>
   </section>
@@ -348,7 +376,12 @@
     // 科目ごとの週の進め方（武田塾式の4日進んで2日復習・1日予備が既定）
     subjectPace: {},
     bookSelection: null, // 参考書リスト編集画面で確定した内容
+    planStart: null,     // 計画の起点日（YYYY-MM-DD）。保存した計画を開き直しても日付がずれないように持つ
+    examDateAbs: null,   // 本番日（YYYY-MM-DD）。週数入力の場合も絶対日付に変換して保存する
+    progress: {},        // { 'YYYY-MM-DD': { 科目キー: true } } 実際にやった記録
+    doneMap: {},         // { '科目キー::教材名（n周目）': 消化済みの量 } リスケジュール時に差し引く
   };
+  const STORAGE_KEY = 'study-plan-maker-v1';
   const DEFAULT_PACE = { advance: 4, review: 2 };
 
   const $ = (id) => document.getElementById(id);
@@ -795,9 +828,16 @@
   // ═══════════════════════════════════════════════════════════
   // 期間
   // ═══════════════════════════════════════════════════════════
+  // toISOString はUTCに変換されるため日本時間だと1日ずれる。ローカル日付で組み立てる
+  function toDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  }
+
   function todayStr() {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
+    return toDateStr(new Date());
   }
 
   function computeDaysFromDate(dateStr) {
@@ -808,13 +848,30 @@
     return Math.max(1, Math.ceil((exam - now) / (1000 * 60 * 60 * 24)));
   }
 
+  function daysBetween(fromStr, toStr) {
+    const a = new Date(fromStr + 'T00:00:00');
+    const b = new Date(toStr + 'T00:00:00');
+    return Math.max(1, Math.ceil((b - a) / (1000 * 60 * 60 * 24)));
+  }
+
   function getTotalDays() {
+    // 計画確定後は「起点日→本番日」で固定する（保存した計画を開き直しても日付がずれない）
+    if (state.planStart && state.examDateAbs) return daysBetween(state.planStart, state.examDateAbs);
     if (state.periodMode === 'date') return computeDaysFromDate(state.examDate);
     return state.weeksDirect ? state.weeksDirect * 7 : null;
   }
 
-  function startDate() {
+  // 入力内容から本番日を絶対日付に確定する
+  function resolveExamDate() {
+    if (state.periodMode === 'date' && state.examDate) return state.examDate;
     const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + (state.weeksDirect || 0) * 7);
+    return toDateStr(d);
+  }
+
+  function startDate() {
+    const d = state.planStart ? new Date(state.planStart + 'T00:00:00') : new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }
@@ -823,6 +880,46 @@
     const d = startDate();
     d.setDate(d.getDate() + i);
     return d;
+  }
+
+  function dayKey(i) {
+    return toDateStr(dateForDayIndex(i));
+  }
+
+  function todayIndex() {
+    if (!state.planStart) return 0;
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    const s = startDate();
+    return Math.round((t - s) / (1000 * 60 * 60 * 24));
+  }
+
+  // ── 保存・復元 ──────────────────────────────────────
+  const SAVED_KEYS = ['school', 'schoolHensachi', 'periodMode', 'examDate', 'weeksDirect', 'hoursPerDay',
+    'levelMode', 'overallHensachi', 'overallCategory', 'subjectIncluded', 'socialType', 'rikaBasicTypes',
+    'subjectHensachi', 'subjectCategory', 'subjectPace', 'subjectScope', 'bookSelection',
+    'planStart', 'examDateAbs', 'progress', 'doneMap'];
+
+  function savePlan() {
+    try {
+      const data = {};
+      SAVED_KEYS.forEach((k) => { data[k] = state[k]; });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, data }));
+    } catch (e) { /* プライベートブラウズ等で保存できない場合は黙って諦める */ }
+  }
+
+  function loadPlan() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      if (!parsed || !parsed.data || !parsed.data.planStart) return false;
+      Object.assign(state, parsed.data);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function clearPlan() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* noop */ }
   }
 
   function formatDate(d) {
@@ -861,8 +958,9 @@
       const span = days[i];
       const startPos = cursor;
       for (let k = 0; k < span && cursor < n; k++, cursor++) {
-        const from = Math.floor((k * b.units) / span) + 1;
-        const to = Math.floor(((k + 1) * b.units) / span);
+        const off = b.doneOffset || 0; // リスケジュール後は消化済みの続きから番号を振る
+        const from = Math.floor((k * b.units) / span) + 1 + off;
+        const to = Math.floor(((k + 1) * b.units) / span) + off;
         // 1日1単元未満のペースの本では「その日に進む分がない日」が出る。同じ番号を連日出さない
         if (to >= from) plan[dayIndices[cursor]].push({ book: b, from, to });
       }
@@ -928,10 +1026,20 @@
   //   暗記系（単語帳・用語集）＝全期間にわたって毎日並行
   //   メインライン（文法→解釈→長文、講義→演習）＝順番に1冊ずつ
   //   直前期は全科目まとめて志望校の過去問演習
-  function buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, subjectLabel, scope) {
-    const memorize = expandCycles(picked.filter((b) => b.track === 'memorize'));
-    const main = expandCycles(picked.filter((b) => b.track !== 'memorize'));
-    const pastExam = expandCycles([pastExamBook(subjectLabel, scope)]);
+  // すでに消化した分を差し引く（リスケジュール時に使う）。終わった教材は計画から外れる
+  function applyDone(books, subjectKey) {
+    return books.map((b) => {
+      const done = state.doneMap[`${subjectKey}::${b.title}${b.cycleLabel || ''}`] || 0;
+      if (done <= 0) return b;
+      const remaining = b.units - done;
+      return remaining > 0 ? { ...b, units: remaining, doneOffset: done } : null;
+    }).filter(Boolean);
+  }
+
+  function buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, subjectLabel, scope, subjectKey) {
+    const memorize = applyDone(expandCycles(picked.filter((b) => b.track === 'memorize')), subjectKey);
+    const main = applyDone(expandCycles(picked.filter((b) => b.track !== 'memorize')), subjectKey);
+    const pastExam = applyDone(expandCycles([pastExamBook(subjectLabel, scope)]), subjectKey);
 
     const plan = Array.from({ length: totalDays }, () => []);
     const spans = [];
@@ -1002,7 +1110,7 @@
       const picked = entry.books.filter((b) => b.enabled);
       const pace = paceFor(k);
       const scope = entry.scope || scopeFor(k);
-      const schedule = buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, entry.label, scope);
+      const schedule = buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, entry.label, scope, k);
       return { key: k, label: entry.label, abs: entry.abs, scope, pace, ...schedule };
     });
 
@@ -1530,14 +1638,118 @@
   }
 
   function showScreen(id) {
-    ['screen-form', 'screen-books', 'screen-result'].forEach((s) => {
+    ['screen-today', 'screen-form', 'screen-books', 'screen-result'].forEach((s) => {
       $(s).classList.toggle('hidden', s !== id);
     });
     window.scrollTo(0, 0);
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 今日やること・進捗
+  // ═══════════════════════════════════════════════════════════
+  let currentPlan = null;
+
+  function taskLabel(t) {
+    if (t.isReview) {
+      const detail = t.items.map((i) => {
+        const r = i.from === i.to ? `${i.from}` : `${i.from}〜${i.to}`;
+        return `${i.book.title}${i.book.cycleLabel} ${r}${i.book.unitLabel}`;
+      }).join('／');
+      return `復習：${detail}`;
+    }
+    const r = t.from === t.to ? `${t.from}` : `${t.from}〜${t.to}`;
+    return `${t.book.title}${t.book.cycleLabel} ${r}${t.book.unitLabel}`;
+  }
+
+  function renderToday() {
+    currentPlan = buildPlan();
+    const idx = todayIndex();
+    const total = currentPlan.totalDays;
+    const rest = Math.max(0, total - idx);
+
+    $('today-school').textContent = state.school || '志望校未設定';
+    $('today-date').textContent = idx < 0 ? '計画開始前です'
+      : idx >= total ? '本番おつかれさまでした' : formatDate(dateForDayIndex(idx));
+    $('today-meta').textContent = `本番まで残り${rest}日（${state.examDateAbs}）`;
+
+    // 進捗サマリ
+    const doneDays = Object.keys(state.progress).length;
+    const pastDays = clamp(idx + 1, 0, total);
+    const pct = pastDays > 0 ? Math.round((doneDays / pastDays) * 100) : 0;
+    $('today-progress').innerHTML = `
+      <div class="verdict ${pct >= 80 ? 'ok' : pct >= 50 ? 'tight' : 'ng'}">
+        <div class="v-title">消化率 ${pct}%</div>
+        <div class="v-body">これまでの${pastDays}日のうち${doneDays}日ぶんを消化しています。</div>
+      </div>`;
+
+    const wrap = $('today-tasks');
+    wrap.innerHTML = '';
+    if (idx < 0 || idx >= total) {
+      wrap.innerHTML = '<div class="hint" style="margin:0">今日の割り当てはありません。</div>';
+      return;
+    }
+    const key = dayKey(idx);
+    const dayProgress = state.progress[key] || {};
+    let any = false;
+    currentPlan.subjects.forEach((s) => {
+      const items = s.plan[idx];
+      if (!items || !items.length) return;
+      any = true;
+      const row = document.createElement('div');
+      row.className = 'today-row';
+      row.innerHTML = `
+        <label class="today-check"><input type="checkbox" ${dayProgress[s.key] ? 'checked' : ''} /></label>
+        <div class="today-main">
+          <div class="today-subject">${s.label}</div>
+          ${items.map((t) => `<div class="today-task">${taskLabel(t)}</div>`).join('')}
+        </div>`;
+      wrap.appendChild(row);
+      row.querySelector('input').addEventListener('change', (e) => {
+        if (!state.progress[key]) state.progress[key] = {};
+        if (e.target.checked) state.progress[key][s.key] = true;
+        else delete state.progress[key][s.key];
+        if (Object.keys(state.progress[key]).length === 0) delete state.progress[key];
+        savePlan();
+        row.classList.toggle('done', e.target.checked);
+      });
+      row.classList.toggle('done', !!dayProgress[s.key]);
+    });
+    if (!any) wrap.innerHTML = '<div class="hint" style="margin:0">今日は予備日です。遅れている分の取り戻しに使いましょう。</div>';
+  }
+
+  // チェック済みの日からこなした量を集計し、今日を起点に残りを組み直す
+  function reschedule() {
+    const plan = currentPlan || buildPlan();
+    const idx = todayIndex();
+    const done = { ...state.doneMap };
+    Object.keys(state.progress).forEach((k) => {
+      const subjects = state.progress[k];
+      const dayIdx = Math.round((new Date(k + 'T00:00:00') - startDate()) / (1000 * 60 * 60 * 24));
+      if (dayIdx < 0 || dayIdx >= plan.totalDays) return;
+      plan.subjects.forEach((s) => {
+        if (!subjects[s.key]) return;
+        (s.plan[dayIdx] || []).forEach((t) => {
+          if (t.isReview) return;
+          const mapKey = `${s.key}::${t.book.title}${t.book.cycleLabel || ''}`;
+          const amount = t.to - t.from + 1;
+          done[mapKey] = (done[mapKey] || 0) + amount;
+        });
+      });
+    });
+    state.doneMap = done;
+    state.planStart = todayStr();
+    state.progress = {};
+    savePlan();
+    renderToday();
+    alert('今日を起点に、残りの量で計画を組み直しました。');
+  }
+
   function generate() {
+    if (!state.planStart) state.planStart = todayStr();
+    if (!state.examDateAbs) state.examDateAbs = resolveExamDate();
     const plan = buildPlan();
+    currentPlan = plan;
+    savePlan();
     const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
     $('result-school').textContent = state.school ? state.school : '志望校未入力';
     $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
@@ -1550,14 +1762,42 @@
 
   $('btn-to-books').addEventListener('click', () => {
     if (!validateInputs()) return;
+    // 作り直しなので起点日・進捗はリセットする
+    state.planStart = null; state.examDateAbs = null; state.progress = {}; state.doneMap = {};
     state.bookSelection = buildCandidateBooks();
     renderBookEditor();
     showScreen('screen-books');
+  });
+  $('btn-view-plan').addEventListener('click', () => {
+    const plan = currentPlan || buildPlan();
+    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
+    $('result-school').textContent = state.school || '志望校未入力';
+    $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
+    renderVerdict(plan); renderBookList(plan); renderCalendar(plan);
+    showScreen('screen-result');
+  });
+  $('btn-reschedule').addEventListener('click', reschedule);
+  $('btn-new-plan').addEventListener('click', () => {
+    if (!confirm('今の計画と進捗を破棄して、条件から作り直しますか？')) return;
+    clearPlan();
+    state.planStart = null; state.examDateAbs = null; state.progress = {}; state.doneMap = {}; state.bookSelection = null;
+    showScreen('screen-form');
   });
   $('btn-generate').addEventListener('click', generate);
   $('btn-back-form').addEventListener('click', () => showScreen('screen-form'));
   $('btn-back-books').addEventListener('click', () => showScreen('screen-books'));
   $('btn-edit').addEventListener('click', () => showScreen('screen-form'));
+  $('btn-to-today').addEventListener('click', () => { renderToday(); showScreen('screen-today'); });
+
+  // 保存済みの計画があれば「今日やること」から始める
+  if (loadPlan()) {
+    renderSubjectList();
+    renderPaceList();
+    renderToday();
+    showScreen('screen-today');
+  } else {
+    showScreen('screen-form');
+  }
 </script>
 </body>
 </html>
