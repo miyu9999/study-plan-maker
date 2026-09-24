@@ -219,7 +219,8 @@
       <div class="hint" style="margin-top:0;margin-bottom:14px">終わったらチェックを入れてください。遅れたら「今日から組み直す」で残りを割り直せます。</div>
       <div id="today-tasks"></div>
     </div>
-    <button class="btn-primary" id="btn-view-plan">計画全体を見る</button>
+    <button class="btn-primary" id="btn-share">今日のノルマを画像で保存・共有</button>
+    <button class="btn-secondary" id="btn-view-plan">計画全体を見る</button>
     <button class="btn-secondary" id="btn-reschedule">遅れた分を今日から組み直す</button>
     <button class="btn-secondary" id="btn-new-plan">条件を変えて作り直す</button>
   </section>
@@ -1744,6 +1745,112 @@
     if (!any) wrap.innerHTML = '<div class="hint" style="margin:0">今日は予備日です。遅れている分の取り戻しに使いましょう。</div>';
   }
 
+  // ── 共有用の画像を書き出す（外部ライブラリを使わずCanvasで描く） ──
+  const SHARE_FONT = '"Hiragino Sans", "Yu Gothic UI", sans-serif';
+
+  function shareItems() {
+    const idx = todayIndex();
+    const out = [];
+    if (!currentPlan || idx < 0 || idx >= currentPlan.totalDays) return out;
+    currentPlan.subjects.forEach((s) => {
+      const items = s.plan[idx];
+      if (!items || !items.length) return;
+      out.push({ label: s.label, lines: items.map(taskLabel) });
+    });
+    return out;
+  }
+
+  // 指定幅で折り返した行の配列を返す
+  function wrapText(ctx, text, maxWidth) {
+    const lines = [];
+    let cur = '';
+    for (const ch of text) {
+      if (ctx.measureText(cur + ch).width > maxWidth && cur) { lines.push(cur); cur = ch; }
+      else cur += ch;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  function drawShareCard() {
+    const W = 1080;
+    const PAD = 72;
+    const blocks = shareItems();
+    const idx = todayIndex();
+    const rest = currentPlan ? Math.max(0, currentPlan.totalDays - idx) : 0;
+
+    // 高さを測るための下書き
+    const probe = document.createElement('canvas').getContext('2d');
+    probe.font = `400 34px ${SHARE_FONT}`;
+    let bodyH = 0;
+    const wrapped = blocks.map((b) => {
+      const ls = b.lines.flatMap((l) => wrapText(probe, l, W - PAD * 2 - 40));
+      bodyH += 56 + ls.length * 48 + 28;
+      return { label: b.label, lines: ls };
+    });
+    const H = Math.max(720, 430 + bodyH + 120);
+
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+
+    ctx.fillStyle = '#f5f6fb'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#3452c4'; ctx.fillRect(0, 0, W, 300);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 40px ${SHARE_FONT}`;
+    ctx.fillText('今日のノルマ', PAD, 108);
+    ctx.font = `700 76px ${SHARE_FONT}`;
+    ctx.fillText(idx >= 0 && currentPlan && idx < currentPlan.totalDays ? formatDate(dateForDayIndex(idx)) : '—', PAD, 196);
+    ctx.font = `400 34px ${SHARE_FONT}`;
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.fillText(`${state.school || '志望校未設定'}　本番まで残り${rest}日`, PAD, 252);
+
+    let y = 386;
+    wrapped.forEach((b) => {
+      ctx.fillStyle = '#ffffff';
+      const blockH = 40 + b.lines.length * 48 + 24;
+      ctx.fillRect(PAD - 24, y - 48, W - (PAD - 24) * 2, blockH);
+      ctx.fillStyle = '#3452c4'; ctx.fillRect(PAD - 24, y - 48, 8, blockH);
+      ctx.fillStyle = '#24399a';
+      ctx.font = `700 34px ${SHARE_FONT}`;
+      ctx.fillText(b.label, PAD, y - 6);
+      ctx.fillStyle = '#1c2033';
+      ctx.font = `400 34px ${SHARE_FONT}`;
+      b.lines.forEach((l, i) => ctx.fillText(l, PAD, y + 44 + i * 48));
+      y += blockH + 28;
+    });
+
+    if (!wrapped.length) {
+      ctx.fillStyle = '#6b7086';
+      ctx.font = `400 36px ${SHARE_FONT}`;
+      ctx.fillText('今日は予備日です。遅れの取り戻しに使いましょう。', PAD, y);
+      y += 60;
+    }
+
+    ctx.fillStyle = '#6b7086';
+    ctx.font = `400 28px ${SHARE_FONT}`;
+    ctx.fillText('逆算学習計画メーカー', PAD, H - 56);
+    ctx.fillText('miyu9999.github.io/study-plan-maker', PAD + 330, H - 56);
+    return cv;
+  }
+
+  async function shareToday() {
+    const cv = drawShareCard();
+    const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+    if (!blob) { alert('画像を作成できませんでした。'); return; }
+    const fileName = `今日のノルマ_${todayStr()}.png`;
+    const file = new File([blob], fileName, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: '今日のノルマ' }); return; }
+      catch (e) { /* キャンセル時はダウンロードにフォールバックしない */ if (e && e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // チェック済みの日からこなした量を集計し、今日を起点に残りを組み直す
   function reschedule() {
     const plan = currentPlan || buildPlan();
@@ -1803,6 +1910,7 @@
     renderVerdict(plan); renderBookList(plan); renderCalendar(plan);
     showScreen('screen-result');
   });
+  $('btn-share').addEventListener('click', shareToday);
   $('btn-reschedule').addEventListener('click', reschedule);
   $('btn-new-plan').addEventListener('click', () => {
     if (!confirm('今の計画と進捗を破棄して、条件から作り直しますか？')) return;
