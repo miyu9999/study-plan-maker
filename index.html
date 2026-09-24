@@ -4,334 +4,458 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>逆算学習計画メーカー（仮）</title>
-<meta name="theme-color" content="#3452c4" />
+<meta name="theme-color" content="#0a0c10" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="favicon-32.png" sizes="32x32" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
 <style>
   :root {
-    --primary: #3452c4;
-    --primary-dark: #24399a;
-    --primary-light: #eef1fd;
-    --bg: #f5f6fb;
-    --surface: #ffffff;
-    --text: #1c2033;
-    --text-sub: #6b7086;
-    --border: #e2e4f0;
-    --radius: 14px;
-    --warn-bg: #fff6e5;
-    --warn-border: #f0d38a;
-    --warn-text: #7a5a00;
-    --ng-bg: #fdecec;
-    --ng-border: #f0aaaa;
-    --ng-text: #97302f;
-    --ok-bg: #e9f7ee;
-    --ok-border: #a4dbb8;
-    --ok-text: #1f6b3c;
+    --bg: #0a0c10;
+    --panel: #12151a;
+    --panel2: #171b22;
+    --line: rgba(255,255,255,.14);
+    --text: #e7e9ec;
+    --text-dim: #838a95;
+    --accent: #39e0c9;
+    --accent-ink: #06322c;
+    --ok: #4ade80;
+    --tight: #f5b942;
+    --ng: #ff5f5f;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --display: 'Big Shoulders Display', sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+    font-family: var(--mono);
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 1px, transparent 3px);
   }
-  header { padding: 36px 20px 20px; text-align: center; }
-  header h1 { font-size: 1.4rem; font-weight: 800; }
-  header p { font-size: .85rem; color: var(--text-sub); margin-top: 8px; line-height: 1.6; }
+  input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; }
+  ::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
-  main { max-width: 680px; margin: 0 auto; padding: 8px 16px 60px; }
+  /* ── ヘッダー ── */
+  header.app-header {
+    position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line);
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  header.app-header .logo {
+    display: flex; align-items: baseline; gap: 2px; font-family: var(--display); font-weight: 700;
+    font-size: 20px; letter-spacing: .01em; white-space: nowrap;
+  }
+  header.app-header .logo .mark { color: var(--accent); }
+  header.app-header .logo .tag { color: var(--text-dim); font-size: 13px; }
+  header.app-header .logo .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 8px;
+    animation: pulse-dot 1.8s ease-in-out infinite; flex: none;
+  }
+  header.app-header .status {
+    font-size: 10px; color: var(--text-dim); letter-spacing: .06em; text-align: right;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 110px; }
+  .screen { animation: rise .25s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .page-title { font-family: var(--display); font-weight: 700; font-size: 24px; margin-bottom: 4px; }
+  .page-desc { font-size: 12px; color: var(--text-dim); line-height: 1.7; margin-bottom: 18px; }
+
+  /* ── corner bracket（装飾） ── */
+  .corners { position: relative; }
+  .corner { position: absolute; width: 14px; height: 14px; pointer-events: none; }
+  .corner-tl { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+  .corner-tr { top: -1px; right: -1px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+  .corner-bl { bottom: -1px; left: -1px; border-bottom: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+  .corner-br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
 
   .card {
-    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
-    padding: 22px; margin-bottom: 18px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 0;
+    padding: 18px 20px; margin-bottom: 16px; position: relative;
   }
-  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
-  .field { margin-bottom: 18px; }
+  .card h2 {
+    font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: .04em;
+    margin-bottom: 14px; color: var(--accent); text-transform: none;
+  }
+  .card h2::before { content: '> '; }
+  .field { margin-bottom: 16px; }
   .field:last-child { margin-bottom: 0; }
-  .field label.field-label { display: block; font-size: .82rem; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; }
-
-  .seg { display: flex; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; }
-  .seg button {
-    flex: 1; padding: 10px 8px; border: 0; background: var(--surface); color: var(--text);
-    font-size: .85rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  .field label.field-label {
+    display: block; font-size: 10.5px; color: var(--text-dim); letter-spacing: .06em; margin-bottom: 6px;
   }
-  .seg button + button { border-left: 1.5px solid var(--border); }
-  .seg button.active { background: var(--primary); color: #fff; }
+
+  .seg { display: flex; border: 1px solid var(--line); }
+  .seg button {
+    flex: 1; padding: 10px 8px; border: 0; background: transparent; color: var(--text);
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--mono);
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.active { background: var(--accent); color: var(--accent-ink); }
 
   input[type=text], input[type=number], input[type=date], select {
-    width: 100%; padding: 11px 12px; border-radius: 10px; border: 1.5px solid var(--border);
-    font-size: .95rem; font-family: inherit; background: var(--surface); color: var(--text);
+    width: 100%; padding: 10px 12px; border-radius: 0; border: 1px solid var(--line);
+    font-size: 13px; font-family: var(--mono); background: var(--bg); color: var(--text);
   }
-  input:focus, select:focus { outline: 2px solid var(--primary-light); border-color: var(--primary); }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
 
   .subject-row {
-    display: flex; align-items: center; gap: 10px; padding: 9px 0; flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; padding: 10px 0; flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
   }
   .subject-row:last-child { border-bottom: 0; }
-  .subject-row .name { flex: 0 0 70px; font-size: .88rem; font-weight: 600; }
-  .row-controls { flex: 1; display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-  .include-toggle { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--text-sub); white-space: nowrap; }
-  .include-toggle input { width: 16px; height: 16px; }
-  .hensachi-input { width: 72px !important; text-align: center; padding: 8px !important; flex: none; }
-  .social-type-select { width: auto !important; padding: 8px 10px !important; font-size: .8rem !important; flex: none; }
-  .scope-select { width: auto !important; padding: 8px 6px !important; font-size: .76rem !important; flex: none; }
-  .rika-select { width: auto !important; padding: 8px 6px !important; font-size: .76rem !important; flex: none; }
-  .scope-fixed { font-size: .74rem; color: var(--text-sub); white-space: nowrap; }
+  .subject-row .name { flex: 0 0 74px; font-size: 13px; font-weight: 600; }
+  .row-controls { flex: 1; display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+  .include-toggle { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+  .include-toggle input { width: 15px; height: 15px; }
+  .hensachi-input { width: 64px !important; text-align: center; padding: 7px !important; flex: none; }
+  .social-type-select { width: auto !important; padding: 7px 8px !important; font-size: 11px !important; flex: none; }
+  .scope-select { width: auto !important; padding: 7px 6px !important; font-size: 10.5px !important; flex: none; color: var(--text-dim); }
+  .rika-select { width: auto !important; padding: 7px 6px !important; font-size: 10.5px !important; flex: none; }
+  .scope-fixed { font-size: 10.5px; color: var(--text-dim); white-space: nowrap; }
   .level-seg { flex: 1; min-width: 180px; }
-  .level-seg button { padding: 8px 4px; font-size: .78rem; }
+  .level-seg button { padding: 8px 4px; font-size: 11px; }
 
   .btn-primary {
-    width: 100%; padding: 15px; border-radius: 12px; border: 0; background: var(--primary); color: #fff;
-    font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 4px;
+    width: 100%; padding: 14px; border-radius: 0; border: 1px solid var(--accent); background: var(--accent);
+    color: var(--accent-ink); font-size: 13px; font-weight: 700; letter-spacing: .06em; cursor: pointer;
+    font-family: var(--mono); margin-top: 4px;
   }
-  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
   .btn-secondary {
-    width: 100%; padding: 13px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface);
-    color: var(--primary-dark); font-size: .9rem; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 10px;
+    width: 100%; padding: 12px; border-radius: 0; border: 1px solid var(--line); background: transparent;
+    color: var(--text); font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--mono); margin-top: 10px;
   }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-link {
+    display: block; width: 100%; text-align: center; padding: 10px; border: 0; background: transparent;
+    color: var(--text-dim); font-size: 11px; font-family: var(--mono); cursor: pointer; margin-top: 8px; letter-spacing: .04em;
+  }
+  .btn-link:hover { color: var(--accent); }
 
-  .hint { font-size: .76rem; color: var(--text-sub); margin-top: 6px; line-height: 1.5; }
+  .hint { font-size: 10.5px; color: var(--text-dim); margin-top: 6px; line-height: 1.6; }
   .hidden { display: none !important; }
 
   .disclaimer {
-    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text);
-    border-radius: 10px; padding: 12px 14px; font-size: .8rem; line-height: 1.6; margin-bottom: 18px;
+    font-size: 10.5px; color: var(--text-dim); line-height: 1.7; margin-bottom: 16px;
+    border-left: 2px solid var(--line); padding-left: 10px;
   }
 
-  .result-header { text-align: center; margin-bottom: 20px; }
-  .result-header .school { font-size: .85rem; color: var(--text-sub); }
-  .result-header .title { font-size: 1.25rem; font-weight: 800; margin-top: 4px; }
-  .result-header .meta { font-size: .8rem; color: var(--text-sub); margin-top: 6px; }
+  .result-header { text-align: center; margin-bottom: 18px; }
+  .result-header .school { font-size: 11px; color: var(--text-dim); letter-spacing: .04em; }
+  .result-header .title { font-family: var(--display); font-weight: 700; font-size: 22px; margin-top: 4px; }
+  .result-header .meta { font-size: 10.5px; color: var(--text-dim); margin-top: 6px; letter-spacing: .04em; }
+
+  .section-label {
+    font-size: 11px; color: var(--accent); letter-spacing: .12em; margin: 22px 0 10px;
+  }
+  .section-label::before { content: '> '; }
+  .section-label:first-child { margin-top: 0; }
 
   /* 実現可能性パネル */
-  .verdict { border-radius: 12px; padding: 16px; margin-bottom: 18px; border: 1px solid; }
-  .verdict.ok { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-text); }
-  .verdict.tight { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
-  .verdict.ng { background: var(--ng-bg); border-color: var(--ng-border); color: var(--ng-text); }
-  .verdict .v-title { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
-  .verdict .v-body { font-size: .84rem; line-height: 1.7; }
-  .verdict .v-nums { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: .8rem; }
-  .verdict .v-nums b { font-size: 1.15rem; }
+  .verdict { border: 1px solid var(--line); background: var(--panel); padding: 16px 18px; margin-bottom: 18px; border-left: 3px solid var(--line); }
+  .verdict.ok { border-left-color: var(--ok); }
+  .verdict.tight { border-left-color: var(--tight); }
+  .verdict.ng { border-left-color: var(--ng); }
+  .verdict .v-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .verdict .v-head svg { flex: none; }
+  .verdict.ok .v-head svg { stroke: var(--ok); }
+  .verdict.tight .v-head svg { stroke: var(--tight); }
+  .verdict.ng .v-head svg { stroke: var(--ng); }
+  .verdict .v-title { font-size: 12px; letter-spacing: .1em; font-weight: 700; }
+  .verdict.ok .v-title { color: var(--ok); }
+  .verdict.tight .v-title { color: var(--tight); }
+  .verdict.ng .v-title { color: var(--ng); }
+  .verdict .v-body { font-size: 12.5px; color: var(--text-dim); line-height: 1.7; margin-bottom: 4px; }
+  .verdict .v-nums { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .verdict .v-nums > span { display: block; }
+  .verdict .v-nums .n-label { font-size: 9.5px; color: var(--text-dim); letter-spacing: .06em; margin-bottom: 2px; }
+  .verdict .v-nums .n-val { font-size: 17px; font-weight: 700; font-family: var(--mono); }
+  .verdict .v-sub { font-size: 10.5px; color: var(--text-dim); margin-top: 10px; }
 
   /* リスト1 */
-  .subject-block { margin-bottom: 16px; }
-  .subject-block:last-child { margin-bottom: 0; }
+  .subject-block { background: var(--panel); border: 1px solid var(--line); padding: 16px 18px; margin-bottom: 12px; }
   .subject-block .sb-head {
     display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
-    padding-bottom: 8px; margin-bottom: 8px; border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 8px; margin-bottom: 6px; border-bottom: 1px solid var(--line);
   }
-  .subject-block .sb-name { font-size: .98rem; font-weight: 800; }
-  .subject-block .sb-meta { font-size: .74rem; color: var(--text-sub); }
-  .book-line { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+  .subject-block .sb-name { font-family: var(--display); font-weight: 700; font-size: 17px; }
+  .subject-block .sb-meta { font-size: 9.5px; color: var(--text-dim); text-align: right; }
+  .book-line { display: flex; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px dashed var(--line); flex-wrap: wrap; }
   .book-line:last-child { border-bottom: 0; }
-  .band-tag {
-    flex: none; font-size: .66rem; font-weight: 700; padding: 2px 7px; border-radius: 999px;
-    background: var(--primary-light); color: var(--primary-dark);
-  }
-  .book-line .b-title { flex: 1 1 150px; font-size: .84rem; font-weight: 600; }
-  .book-line .b-amount { font-size: .74rem; color: var(--text-sub); white-space: nowrap; }
-  .book-line .b-span { font-size: .74rem; color: var(--primary); font-weight: 700; white-space: nowrap; }
+  .band-tag { flex: none; font-size: 9.5px; font-weight: 700; color: var(--accent); }
+  .band-tag::before { content: '［'; }
+  .band-tag::after { content: '］'; }
+  .book-line .b-title { flex: 1 1 140px; font-size: 12.5px; }
+  .book-line .b-amount { font-size: 10px; color: var(--text-dim); white-space: nowrap; }
+  .book-line .b-span { font-size: 10px; color: var(--text); white-space: nowrap; }
 
   /* 日毎カレンダー */
-  .week-card { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; background: var(--surface); }
+  .week-card { border: 1px solid var(--line); margin-bottom: 8px; }
   .week-head {
-    width: 100%; text-align: left; border: 0; background: var(--bg); padding: 10px 14px; cursor: pointer;
-    font-family: inherit; font-size: .84rem; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; gap: 8px;
+    width: 100%; text-align: left; border: 0; background: var(--panel2); padding: 11px 16px; cursor: pointer;
+    font-family: var(--mono); font-size: 12px; color: var(--text); display: flex; justify-content: space-between; gap: 8px;
   }
-  .week-head:hover { background: var(--primary-light); }
-  .week-head .w-load { font-size: .74rem; color: var(--text-sub); font-weight: 600; }
-  .day-row { padding: 9px 14px; border-top: 1px solid var(--border); }
-  .day-date { font-size: .74rem; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
+  .week-head:hover { color: var(--accent); }
+  .week-head .w-load { font-size: 10px; color: var(--text-dim); font-weight: 600; }
+  .day-row { padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+  .day-date { font-size: 10px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; }
   .day-tasks { display: flex; flex-direction: column; gap: 3px; }
-  .task { font-size: .8rem; line-height: 1.5; display: flex; gap: 6px; align-items: baseline; }
-  .task .t-sub { flex: 0 0 4.6em; font-weight: 700; color: var(--primary-dark); }
+  .task { font-size: 12px; line-height: 1.7; display: flex; gap: 6px; align-items: baseline; }
+  .task .t-sub { flex: 0 0 4.6em; font-weight: 700; color: var(--accent); }
   .task .t-items { flex: 1; display: flex; flex-direction: column; gap: 1px; }
   .track-label {
-    font-size: .72rem; font-weight: 700; color: var(--text-sub); margin: 10px 0 2px;
-    padding-left: 8px; border-left: 3px solid var(--primary-light);
+    font-size: 10.5px; font-weight: 700; color: var(--text-dim); margin: 8px 0 6px;
+    padding-left: 8px; border-left: 2px solid var(--line);
   }
-  .t-review { color: var(--text-sub); }
+  .t-review { color: var(--text-dim); }
+  .day-done { font-size: 11.5px; color: var(--text-dim); }
 
   /* 週の進め方 */
-  .pace-input { width: 46px !important; padding: 6px !important; text-align: center; margin: 0 4px; }
+  .pace-input { width: 42px !important; padding: 5px !important; text-align: center; margin: 0 4px; }
 
-  /* 今日やること */
-  .today-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+  /* ── 今日やること ── */
+  .today-hero { background: var(--panel); border: 1px solid var(--line); padding: 22px 20px; margin-bottom: 16px; }
+  .today-hero .dday { font-size: 11px; color: var(--accent); letter-spacing: .12em; margin-bottom: 10px; }
+  .today-hero .bigdate {
+    font-family: var(--mono); font-weight: 700; font-size: 38px; letter-spacing: -.01em;
+    text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+  .today-hero .bigdate .dow { font-size: 18px; color: var(--text-dim); margin-left: 4px; }
+  .seg-bar { display: flex; gap: 3px; margin-top: 16px; }
+  .seg-bar .seg-cell { flex: 1; height: 12px; background: var(--line); }
+  .seg-bar .seg-cell.filled { background: var(--accent); }
+  .seg-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 9.5px; color: var(--text-dim); letter-spacing: .06em; }
+
+  .today-row { display: flex; gap: 12px; align-items: flex-start; padding: 13px 0; border-bottom: 1px solid var(--line); }
   .today-row:last-child { border-bottom: 0; }
-  .today-row.done { opacity: .5; }
+  .today-row.done { opacity: .4; }
   .today-row.done .today-task { text-decoration: line-through; }
-  .today-check input { width: 22px; height: 22px; margin-top: 2px; }
+  .today-check input { width: 20px; height: 20px; margin-top: 2px; }
   .today-main { flex: 1; min-width: 0; }
-  .today-subject { font-size: .84rem; font-weight: 800; color: var(--primary-dark); margin-bottom: 3px; }
-  .today-task { font-size: .84rem; line-height: 1.6; }
+  .today-subject { font-size: 11px; color: var(--accent); letter-spacing: .04em; margin-bottom: 3px; }
+  .today-subject::before { content: '［'; }
+  .today-subject::after { content: '］'; }
+  .today-task { font-size: 13px; line-height: 1.6; }
 
   .auto-note {
-    background: var(--primary-light); border: 1px solid var(--border); border-radius: 10px;
-    padding: 11px 13px; font-size: .78rem; line-height: 1.7; color: var(--primary-dark); margin-bottom: 14px;
+    background: var(--panel2); border: 1px solid var(--line); padding: 11px 13px; font-size: 11px;
+    line-height: 1.7; color: var(--text-dim); margin-bottom: 14px;
   }
+  .auto-note b { color: var(--text); }
 
   /* 参考書リスト編集 */
-  .editor-line { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+  .editor-line { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed var(--line); }
   .editor-line:last-child { border-bottom: 0; }
-  .editor-check input { width: 18px; height: 18px; margin-top: 2px; }
+  .editor-check input { width: 17px; height: 17px; margin-top: 3px; }
   .editor-main { flex: 1; min-width: 0; }
-  .editor-title { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: .84rem; font-weight: 600; }
-  .tiny-tag { font-size: .64rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; background: var(--bg); color: var(--text-sub); }
-  .editor-amount { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: .74rem; color: var(--text-sub); margin-top: 5px; }
-  .editor-amount input { width: 62px !important; padding: 5px !important; text-align: center; font-size: .78rem !important; }
+  .editor-title { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  .tiny-tag { font-size: 9.5px; font-weight: 700; padding: 1px 6px; border: 1px solid var(--line); color: var(--text-dim); }
+  .editor-amount { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 10.5px; color: var(--text-dim); margin-top: 6px; }
+  .editor-amount input { width: 56px !important; padding: 5px !important; text-align: center; font-size: 11px !important; }
   .ed-sep { margin-left: 4px; }
   .add-book-btn {
-    margin-top: 10px; padding: 8px 14px; border-radius: 8px; border: 1.5px dashed var(--border);
-    background: transparent; color: var(--primary-dark); font-family: inherit; font-size: .8rem; font-weight: 700; cursor: pointer;
+    margin-top: 10px; padding: 7px 12px; border: 1px dashed var(--line); background: transparent;
+    color: var(--text-dim); font-family: var(--mono); font-size: 11px; cursor: pointer;
   }
-  .add-book-btn:hover { border-color: var(--primary); background: var(--primary-light); }
-  .add-book-form { margin-top: 10px; padding: 12px; background: var(--bg); border-radius: 10px; }
-  .add-book-form input, .add-book-form select { margin-bottom: 6px; font-size: .84rem !important; }
+  .add-book-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .add-book-form { margin-top: 10px; padding: 12px; background: var(--bg); border: 1px solid var(--line); }
+  .add-book-form input, .add-book-form select { margin-bottom: 6px; font-size: 12px !important; }
   .nb-row { display: flex; gap: 6px; }
   .nb-add {
-    flex: none; padding: 9px 16px; border-radius: 8px; border: 0; background: var(--primary); color: #fff;
-    font-family: inherit; font-size: .84rem; font-weight: 700; cursor: pointer; margin-bottom: 6px;
+    flex: none; padding: 9px 16px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; cursor: pointer; margin-bottom: 6px;
   }
-  .day-done { font-size: .78rem; color: var(--text-sub); }
+
+  /* ── フォーム：ステップウィザード ── */
+  .step-tabs { display: flex; border-bottom: 1px solid var(--line); margin-bottom: 20px; overflow-x: auto; }
+  .step-tabs button {
+    flex: 1; min-width: 88px; padding: 10px 4px; border: 0; border-bottom: 2px solid transparent;
+    background: transparent; font-family: var(--mono); font-size: 10.5px; color: var(--text-dim);
+    cursor: pointer; white-space: nowrap;
+  }
+  .step-tabs button.active { border-bottom-color: var(--accent); color: var(--accent); }
+  .form-step { display: none; }
+  .form-step.active { display: block; }
+  .form-nav { display: flex; gap: 10px; margin-top: 22px; }
+  .form-nav .btn-secondary, .form-nav .btn-primary { margin-top: 0; }
+  .form-nav .btn-secondary { flex: 1; }
+  .form-nav .btn-primary { flex: 2; }
+
+  /* ── ボトムナビ ── */
+  nav.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-top: 1px solid var(--line); z-index: 5;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.bottom-nav .nav-row { max-width: 640px; margin: 0 auto; display: flex; justify-content: space-around; }
+  nav.bottom-nav button {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px;
+    border: 0; border-top: 2px solid transparent; background: transparent; cursor: pointer;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .03em; color: var(--text-dim);
+  }
+  nav.bottom-nav button.active { border-top-color: var(--accent); color: var(--accent); }
+  nav.bottom-nav svg { flex: none; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty-state .es-title { font-family: var(--display); font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  .empty-state .es-body { font-size: 12px; line-height: 1.7; margin-bottom: 20px; }
 </style>
 </head>
 <body>
-<header>
-  <h1>逆算学習計画メーカー（仮）</h1>
-  <p>志望校・残り期間・模試の偏差値から、やるべき参考書と本番までの日毎の計画を逆算します</p>
+<header class="app-header">
+  <span class="logo"><span class="mark">▍</span>逆算<span class="tag">.SYS</span><span class="dot"></span></span>
+  <span class="status" id="header-status">条件を入力してください</span>
 </header>
 
 <main>
-  <section id="screen-today" class="hidden">
-    <div class="result-header">
-      <div class="school" id="today-school"></div>
-      <div class="title" id="today-date"></div>
-      <div class="meta" id="today-meta"></div>
+  <section id="screen-today" class="screen hidden">
+    <div class="today-hero corners">
+      <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+      <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+      <div class="dday" id="today-dday"></div>
+      <div class="bigdate" id="today-bigdate"></div>
+      <div class="seg-bar" id="today-segbar"></div>
+      <div class="seg-meta" id="today-segmeta"></div>
     </div>
     <div id="today-progress"></div>
     <div class="card">
-      <h2>今日やること</h2>
-      <div class="hint" style="margin-top:0;margin-bottom:14px">終わったらチェックを入れてください。遅れたら「今日から組み直す」で残りを割り直せます。</div>
+      <h2>TODAY_TASKS</h2>
+      <div class="hint" style="margin-top:0;margin-bottom:14px">終わったらチェックを入れてください。</div>
       <div id="today-tasks"></div>
     </div>
-    <button class="btn-primary" id="btn-share">今日のノルマを画像で保存・共有</button>
-    <button class="btn-secondary" id="btn-view-plan">計画全体を見る</button>
-    <button class="btn-secondary" id="btn-reschedule">遅れた分を今日から組み直す</button>
-    <button class="btn-secondary" id="btn-new-plan">条件を変えて作り直す</button>
+    <button class="btn-primary" id="btn-share">SHARE_TODAY_CARD →</button>
+    <button class="btn-secondary" id="btn-view-plan">VIEW_FULL_PLAN</button>
+    <button class="btn-link" id="btn-reschedule">遅れた分を今日から組み直す</button>
   </section>
 
-  <section id="screen-form" class="hidden">
-    <div class="card">
-      <h2>1. 志望校</h2>
-      <!-- 医学部編入モードは一旦UIから非表示（一般受験に絞る方針）。コードは残してあるので復活可能 -->
-      <div class="field hidden">
-        <div class="seg" id="exam-type-seg">
-          <button type="button" data-val="general" class="active">一般受験</button>
-          <button type="button" data-val="henyu">医学部編入</button>
-        </div>
-      </div>
-      <div class="field">
-        <label class="field-label">大学</label>
-        <select id="school-uni-select"></select>
-      </div>
-      <div class="field" id="school-faculty-field">
-        <label class="field-label">学部・学科</label>
-        <select id="school-faculty-select"></select>
-      </div>
-      <div class="field hidden" id="school-free-field">
-        <label class="field-label">志望校名（記録用）</label>
-        <input type="text" id="school-input" placeholder="例：〇〇大学△△学部" />
-      </div>
-      <div class="field">
-        <label class="field-label">志望校の偏差値</label>
-        <input type="number" id="school-hensachi-input" min="30" max="80" step="2.5" value="60" />
-        <div class="hint">大学・学部を選ぶと自動で入ります（河合塾系の偏差値を基準にした目安。実際の値と違う場合はここを直接書き換えてください）。この値でやるべき参考書のゴール地点が決まります（〜49：標準レベルまで／50〜59：応用レベルまで／60〜：発展レベルまで）。</div>
-      </div>
-    </div>
+  <section id="screen-form" class="screen hidden">
+    <div class="page-title">条件を入力</div>
+    <div class="step-tabs" id="form-step-tabs"></div>
 
-    <div class="card">
-      <h2>2. 残り期間と勉強時間</h2>
-      <div class="field">
-        <label class="field-label">入力方法</label>
-        <div class="seg" id="period-mode-seg">
-          <button type="button" data-val="date" class="active">試験日から計算</button>
-          <button type="button" data-val="weeks">週数を直接入力</button>
+    <div class="form-step" data-step="0">
+      <div class="card">
+        <!-- 医学部編入モードは一旦UIから非表示（一般受験に絞る方針）。コードは残してあるので復活可能 -->
+        <div class="field hidden">
+          <div class="seg" id="exam-type-seg">
+            <button type="button" data-val="general" class="active">一般受験</button>
+            <button type="button" data-val="henyu">医学部編入</button>
+          </div>
         </div>
-      </div>
-      <div class="field" id="period-date-field">
-        <label class="field-label">試験日</label>
-        <input type="date" id="exam-date-input" />
-      </div>
-      <div class="field hidden" id="period-weeks-field">
-        <label class="field-label">残り週数</label>
-        <input type="number" id="weeks-input" min="1" max="104" placeholder="例：24" />
-      </div>
-      <div class="hint" id="period-hint"></div>
-      <div class="field" style="margin-top:18px">
-        <label class="field-label">1日に確保できる勉強時間（時間）</label>
-        <input type="number" id="hours-input" min="0.5" max="16" step="0.5" value="5" />
-        <div class="hint">この時間で参考書が終わるかどうかを判定します。</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>3. 現在の学力レベル</h2>
-      <div class="field">
-        <label class="field-label">入力方法</label>
-        <div class="seg" id="level-mode-seg">
-          <button type="button" data-val="hensachi" class="active">模試の偏差値がある</button>
-          <button type="button" data-val="category">模試を受けたことがない</button>
+        <div class="field">
+          <label class="field-label">大学</label>
+          <select id="school-uni-select"></select>
         </div>
-      </div>
-      <div class="field" id="level-hensachi-field">
-        <label class="field-label">全体偏差値（直近の模試）</label>
-        <input type="number" id="overall-hensachi-input" min="30" max="80" placeholder="例：55" />
-      </div>
-      <div class="field hidden" id="level-category-field">
-        <label class="field-label">今の状態に近いものを選んでください</label>
-        <div class="seg" id="level-category-seg" style="flex-direction: column;">
-          <button type="button" data-val="blank" class="active">白紙に近い（これから基礎から）</button>
-          <button type="button" data-val="shaky">基礎は触ったが抜け漏れが多い</button>
-          <button type="button" data-val="ok">基礎はできる（応用に穴がある）</button>
-          <button type="button" data-val="applied">応用・過去問演習ができる</button>
+        <div class="field" id="school-faculty-field">
+          <label class="field-label">学部・学科</label>
+          <select id="school-faculty-select"></select>
+        </div>
+        <div class="field hidden" id="school-free-field">
+          <label class="field-label">志望校名（記録用）</label>
+          <input type="text" id="school-input" placeholder="例：〇〇大学△△学部" />
+        </div>
+        <div class="field">
+          <label class="field-label">志望校の偏差値</label>
+          <input type="number" id="school-hensachi-input" min="30" max="80" step="2.5" value="60" />
+          <div class="hint">大学・学部を選ぶと自動で入ります（河合塾系の偏差値を基準にした目安。実際の値と違う場合はここを直接書き換えてください）。この値でやるべき参考書のゴール地点が決まります（〜49：標準レベルまで／50〜59：応用レベルまで／60〜：発展レベルまで）。</div>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>4. 科目ごとの学力</h2>
-      <div class="auto-note hidden" id="subject-auto-note"></div>
-      <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
-      <div id="subject-list"></div>
-      <div class="hint">「含める」を外した科目は計画から外れます。現代文・古文・漢文・社会は共通テスト対策用です。</div>
+    <div class="form-step" data-step="1">
+      <div class="card">
+        <div class="field">
+          <label class="field-label">入力方法</label>
+          <div class="seg" id="period-mode-seg">
+            <button type="button" data-val="date" class="active">試験日から計算</button>
+            <button type="button" data-val="weeks">週数を直接入力</button>
+          </div>
+        </div>
+        <div class="field" id="period-date-field">
+          <label class="field-label">試験日</label>
+          <input type="date" id="exam-date-input" />
+        </div>
+        <div class="field hidden" id="period-weeks-field">
+          <label class="field-label">残り週数</label>
+          <input type="number" id="weeks-input" min="1" max="104" placeholder="例：24" />
+        </div>
+        <div class="hint" id="period-hint"></div>
+        <div class="field" style="margin-top:18px">
+          <label class="field-label">1日に確保できる勉強時間（時間）</label>
+          <input type="number" id="hours-input" min="0.5" max="16" step="0.5" value="5" />
+          <div class="hint">この時間で参考書が終わるかどうかを判定します。</div>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>5. 週の進め方（科目ごと）</h2>
-      <div class="hint" style="margin-top:0;margin-bottom:14px">1週間のうち何日を「参考書を進める日」に、何日を「復習日」に充てるかを決めます。武田塾式の「4日進んで2日復習・1日予備」が既定値です。</div>
-      <div id="pace-list"></div>
+    <div class="form-step" data-step="2">
+      <div class="card">
+        <div class="field">
+          <label class="field-label">入力方法</label>
+          <div class="seg" id="level-mode-seg">
+            <button type="button" data-val="hensachi" class="active">模試の偏差値がある</button>
+            <button type="button" data-val="category">模試を受けたことがない</button>
+          </div>
+        </div>
+        <div class="field" id="level-hensachi-field">
+          <label class="field-label">全体偏差値（直近の模試）</label>
+          <input type="number" id="overall-hensachi-input" min="30" max="80" placeholder="例：55" />
+        </div>
+        <div class="field hidden" id="level-category-field">
+          <label class="field-label">今の状態に近いものを選んでください</label>
+          <div class="seg" id="level-category-seg" style="flex-direction: column;">
+            <button type="button" data-val="blank" class="active">白紙に近い（これから基礎から）</button>
+            <button type="button" data-val="shaky">基礎は触ったが抜け漏れが多い</button>
+            <button type="button" data-val="ok">基礎はできる（応用に穴がある）</button>
+            <button type="button" data-val="applied">応用・過去問演習ができる</button>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <button class="btn-primary" id="btn-to-books">参考書リストを作る</button>
+    <div class="form-step" data-step="3">
+      <div class="card">
+        <div class="auto-note hidden" id="subject-auto-note"></div>
+        <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
+        <div id="subject-list"></div>
+        <div class="hint">「含める」を外した科目は計画から外れます。現代文・古文・漢文・社会は共通テスト対策用です。</div>
+      </div>
+    </div>
+
+    <div class="form-step" data-step="4">
+      <div class="card">
+        <div class="hint" style="margin-top:0;margin-bottom:14px">1週間のうち何日を「参考書を進める日」に、何日を「復習日」に充てるかを決めます。武田塾式の「4日進んで2日復習・1日予備」が既定値です。</div>
+        <div id="pace-list"></div>
+      </div>
+    </div>
+
+    <div class="form-nav">
+      <button class="btn-secondary" id="btn-form-prev">戻る</button>
+      <button class="btn-primary" id="btn-form-next">次へ →</button>
+    </div>
+    <button class="btn-link hidden" id="btn-new-plan">今の計画を破棄して最初からやり直す</button>
   </section>
 
-  <section id="screen-books" class="hidden">
+  <section id="screen-books" class="screen hidden">
     <div class="result-header">
       <div class="title">やるべき参考書</div>
       <div class="meta" id="books-meta"></div>
     </div>
     <div class="hint" style="margin-bottom:14px">志望校の偏差値と科目ごとの偏差値から自動で選びました。使わない本はチェックを外し、手持ちの本は「追加」から入れてください。分量は実物に合わせて調整できます。</div>
     <div id="book-editor"></div>
-    <button class="btn-primary" id="btn-generate">この内容で計画を作る</button>
+    <button class="btn-primary" id="btn-generate">BUILD_PLAN →</button>
     <button class="btn-secondary" id="btn-back-form">条件を変える</button>
   </section>
 
-  <section id="screen-result" class="hidden">
+  <section id="screen-result" class="screen hidden">
     <div class="disclaimer">本ツールが出す計画はあくまで目安であり、合格を保証するものではありません。参考書の分量・所要時間は概算値なので、実物に合わせて調整してください。</div>
     <div class="result-header">
       <div class="school" id="result-school"></div>
@@ -341,23 +465,38 @@
 
     <div id="verdict-wrap"></div>
 
-    <div class="card">
-      <h2>やるべき参考書リスト</h2>
-      <div class="hint" style="margin-top:0;margin-bottom:14px">科目ごとの偏差値と志望校の難易度帯から、今のあなたに必要な教材だけを並べています。</div>
-      <div id="book-list"></div>
-    </div>
+    <div class="section-label">BOOK_LIST</div>
+    <div id="book-list"></div>
 
-    <div class="card">
-      <h2>本番までの日毎の計画</h2>
-      <div class="hint" style="margin-top:0;margin-bottom:14px" id="calendar-hint"></div>
-      <div id="calendar"></div>
-    </div>
+    <div class="section-label">DAILY_LOG</div>
+    <div class="hint" style="margin-top:0;margin-bottom:14px" id="calendar-hint"></div>
+    <div id="calendar"></div>
 
-    <button class="btn-primary" id="btn-to-today">今日やることを見る</button>
+    <button class="btn-primary" id="btn-to-today" style="margin-top:16px">BACK_TO_TODAY</button>
     <button class="btn-secondary" id="btn-back-books">参考書を選び直す</button>
-    <button class="btn-secondary" id="btn-edit">条件を変えてもう一度</button>
   </section>
 </main>
+
+<nav class="bottom-nav">
+  <div class="nav-row">
+    <button type="button" id="nav-today" data-nav="today">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>今日</span>
+    </button>
+    <button type="button" id="nav-result" data-nav="result">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="1"/><path d="M3 10h18"/></svg>
+      <span>計画</span>
+    </button>
+    <button type="button" id="nav-books" data-nav="books">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
+      <span>参考書</span>
+    </button>
+    <button type="button" id="nav-form" data-nav="form">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+      <span>条件</span>
+    </button>
+  </div>
+</nav>
 
 <script>
   // ═══════════════════════════════════════════════════════════
@@ -1506,36 +1645,40 @@
     return h >= 10 ? h.toFixed(1) : h.toFixed(1);
   }
 
+  const VERDICT_ICON = {
+    ok: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    tight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    ng: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',
+  };
+
   function renderVerdict(plan) {
     const wrap = $('verdict-wrap');
     const availMin = state.hoursPerDay * 60;
     const ratio = plan.workingAvgMinutes / (availMin || 1);
-    let cls, title, body;
+    let cls, statusLabel, title, body;
     if (ratio <= 0.85) {
-      cls = 'ok';
+      cls = 'ok'; statusLabel = 'STATUS: OK';
       title = '間に合う見込みです';
       body = '今の設定なら、確保できる時間の範囲でこの参考書リストを終えられます。余裕分は過去問演習や苦手分野の追加演習に回せます。';
     } else if (ratio <= 1.15) {
-      cls = 'tight';
+      cls = 'tight'; statusLabel = 'STATUS: TIGHT';
       title = 'ぎりぎり間に合う計算です';
       body = '休んだ日の遅れを取り戻す余地がほとんどありません。勉強時間を増やすか、志望校の偏差値設定・科目数・復習日の配分を見直すと安全です。';
     } else {
-      cls = 'ng';
+      cls = 'ng'; statusLabel = 'STATUS: OVER';
       title = 'このままでは終わりません';
       body = '必要な時間が確保できる時間を上回っています。①1日の勉強時間を増やす ②参考書を減らす（前の画面でチェックを外す） ③科目を減らす ④週に進む日を増やす ⑤参考書の分量を実物に合わせて調整する、のいずれかが必要です。';
     }
     wrap.innerHTML = `
       <div class="verdict ${cls}">
-        <div class="v-title">${title}</div>
-        <div class="v-body">${body}</div>
+        <div class="v-head">${VERDICT_ICON[cls]}<span class="v-title">${statusLabel}</span></div>
+        <div class="v-body"><b style="color:var(--text)">${title}</b><br>${body}</div>
         <div class="v-nums">
-          <span>勉強する日の平均 <b>${fmtHours(plan.workingAvgMinutes)}</b> 時間/日</span>
-          <span>確保できる時間 <b>${state.hoursPerDay}</b> 時間/日</span>
-          <span>総学習量 <b>${Math.round(plan.requiredMinutes / 60)}</b> 時間</span>
+          <span><span class="n-label">AVG/DAY</span><span class="n-val">${fmtHours(plan.workingAvgMinutes)}h</span></span>
+          <span><span class="n-label">CAPACITY</span><span class="n-val">${state.hoursPerDay}h</span></span>
+          <span><span class="n-label">TOTAL</span><span class="n-val">${Math.round(plan.requiredMinutes / 60)}h</span></span>
         </div>
-        <div class="v-nums" style="opacity:.75">
-          <span>実際に勉強する日 ${plan.workingDayCount}日 / 全${plan.totalDays}日（残りは予備日）</span>
-        </div>
+        <div class="v-sub">実際に勉強する日 ${plan.workingDayCount}日 / 全${plan.totalDays}日（残りは予備日）</div>
       </div>`;
   }
 
@@ -1550,7 +1693,7 @@
       block.innerHTML = `
         <div class="sb-head">
           <span class="sb-name">${s.label}</span>
-          <span class="sb-meta">${s.scope === 'common' ? '共テまで' : '2次まで'} / 偏差値${Math.round(s.abs)}相当 / ${bookCount}冊 / 計${subjTotalHours}時間</span>
+          <span class="sb-meta">${s.scope === 'common' ? '共テまで' : '2次まで'}・偏差値${Math.round(s.abs)}相当<br>${bookCount}冊・計${subjTotalHours}時間</span>
         </div>`;
 
       const groups = [
@@ -1645,12 +1788,92 @@
     return true;
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 画面遷移（ボトムナビ4タブ）
+  // ═══════════════════════════════════════════════════════════
+  const SCREEN_IDS = { today: 'screen-today', form: 'screen-form', books: 'screen-books', result: 'screen-result' };
+  const NAV_FOR_SCREEN = { today: 'nav-today', form: 'nav-form', books: 'nav-books', result: 'nav-result' };
+
+  function hasPlan() { return !!state.bookSelection; }
+
+  function updateHeaderStatus() {
+    const el = $('header-status');
+    if (state.school) {
+      const days = getTotalDays();
+      el.textContent = days ? `${state.school} // D-${Math.max(0, days)}` : state.school;
+    } else {
+      el.textContent = '条件を入力してください';
+    }
+  }
+
   function showScreen(id) {
-    ['screen-today', 'screen-form', 'screen-books', 'screen-result'].forEach((s) => {
-      $(s).classList.toggle('hidden', s !== id);
+    Object.entries(SCREEN_IDS).forEach(([key, sid]) => $(sid).classList.toggle('hidden', sid !== id));
+    Object.entries(NAV_FOR_SCREEN).forEach(([key, nid]) => {
+      $(nid).classList.toggle('active', SCREEN_IDS[key] === id);
     });
+    updateHeaderStatus();
     window.scrollTo(0, 0);
   }
+
+  function goNav(key) {
+    if (key !== 'form' && !hasPlan()) {
+      showScreen('screen-form');
+      showFormStep(0);
+      return;
+    }
+    if (key === 'today') { renderToday(); showScreen('screen-today'); }
+    else if (key === 'result') {
+      const plan = currentPlan || buildPlan();
+      renderResultScreen(plan);
+      showScreen('screen-result');
+    } else if (key === 'books') { showScreen('screen-books'); }
+    else { showScreen('screen-form'); }
+  }
+
+  document.querySelectorAll('.bottom-nav [data-nav]').forEach((btn) => {
+    btn.addEventListener('click', () => goNav(btn.dataset.nav));
+  });
+
+  // ── フォームのステップウィザード ──
+  const FORM_STEPS = ['志望校', '期間・時間', '学力', '科目', '進め方'];
+  let formStep = 0;
+
+  function renderFormStepTabs() {
+    const wrap = $('form-step-tabs');
+    wrap.innerHTML = FORM_STEPS.map((label, i) =>
+      `<button type="button" data-step="${i}">${String(i + 1).padStart(2, '0')} ${label}</button>`
+    ).join('');
+    wrap.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => showFormStep(parseInt(btn.dataset.step, 10)));
+    });
+  }
+  renderFormStepTabs();
+
+  function showFormStep(i) {
+    formStep = clamp(i, 0, FORM_STEPS.length - 1);
+    document.querySelectorAll('.form-step').forEach((el) => {
+      el.classList.toggle('active', parseInt(el.dataset.step, 10) === formStep);
+    });
+    document.querySelectorAll('#form-step-tabs button').forEach((btn) => {
+      btn.classList.toggle('active', parseInt(btn.dataset.step, 10) === formStep);
+    });
+    $('btn-form-prev').disabled = formStep === 0;
+    const isLast = formStep === FORM_STEPS.length - 1;
+    $('btn-form-next').textContent = isLast ? '参考書リストを作る' : '次へ →';
+    $('btn-new-plan').classList.toggle('hidden', !hasPlan());
+    window.scrollTo(0, 0);
+  }
+
+  $('btn-form-prev').addEventListener('click', () => showFormStep(formStep - 1));
+  $('btn-form-next').addEventListener('click', () => {
+    if (formStep < FORM_STEPS.length - 1) { showFormStep(formStep + 1); return; }
+    if (!validateInputs()) return;
+    // 作り直しなので起点日・進捗はリセットする
+    state.planStart = null; state.examDateAbs = null; state.progress = {}; state.doneMap = {};
+    state.bookSelection = buildCandidateBooks();
+    renderBookEditor();
+    showScreen('screen-books');
+  });
 
   // ═══════════════════════════════════════════════════════════
   // 今日やること・進捗
@@ -1674,11 +1897,30 @@
     const idx = todayIndex();
     const total = currentPlan.totalDays;
     const rest = Math.max(0, total - idx);
+    const inRange = idx >= 0 && idx < total;
 
-    $('today-school').textContent = state.school || '志望校未設定';
-    $('today-date').textContent = idx < 0 ? '計画開始前です'
-      : idx >= total ? '本番おつかれさまでした' : formatDate(dateForDayIndex(idx));
-    $('today-meta').textContent = `本番まで残り${rest}日（${state.examDateAbs}）`;
+    $('today-dday').textContent = `D-${rest} // EXAM_DATE ${state.examDateAbs || ''}`;
+    if (inRange) {
+      const d = dateForDayIndex(idx);
+      const dow = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()];
+      $('today-bigdate').innerHTML = `${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}<span class="dow">_${dow}</span>`;
+    } else {
+      $('today-bigdate').innerHTML = idx < 0 ? '準備中' : 'FIN';
+    }
+
+    // 今日ぶんのタスク完了率（20セグメントのバー）
+    const todayItems = inRange ? currentPlan.subjects.filter((s) => s.plan[idx] && s.plan[idx].length) : [];
+    const key = inRange ? dayKey(idx) : null;
+    const dayProgress = (key && state.progress[key]) || {};
+    const todayDone = todayItems.filter((s) => dayProgress[s.key]).length;
+    const todayTotal = todayItems.length;
+    const todayPct = todayTotal ? Math.round((todayDone / todayTotal) * 100) : 0;
+    const segCount = 20;
+    const filled = Math.round((todayPct / 100) * segCount);
+    $('today-segbar').innerHTML = Array.from({ length: segCount }, (_, i) =>
+      `<div class="seg-cell ${i < filled ? 'filled' : ''}"></div>`
+    ).join('');
+    $('today-segmeta').innerHTML = `<span>PROGRESS ${todayPct}%</span><span>${todayDone}/${todayTotal} DONE</span>`;
 
     // 進捗サマリ：今日より前に割り当てられたタスク（科目×日）のうち、何件を消化したかで見る。
     // 今日の分はまだ未着手が当たり前なので分母に入れない
@@ -1697,14 +1939,15 @@
     if (dueTasks === 0) {
       $('today-progress').innerHTML = `
         <div class="verdict ok">
-          <div class="v-title">今日からスタートです</div>
+          <div class="v-head">${VERDICT_ICON.ok}<span class="v-title">READY</span></div>
           <div class="v-body">下のタスクを終えたらチェックを入れてください。</div>
         </div>`;
     } else {
       const pct = Math.round((doneTasks / dueTasks) * 100);
+      const cls = pct >= 80 ? 'ok' : pct >= 50 ? 'tight' : 'ng';
       $('today-progress').innerHTML = `
-        <div class="verdict ${pct >= 80 ? 'ok' : pct >= 50 ? 'tight' : 'ng'}">
-          <div class="v-title">消化率 ${pct}%</div>
+        <div class="verdict ${cls}">
+          <div class="v-head">${VERDICT_ICON[cls]}<span class="v-title">消化率 ${pct}%</span></div>
           <div class="v-body">昨日までに割り当てられた${dueTasks}件のうち${doneTasks}件を消化しています。`
         + (behind > 0 ? `未消化が${behind}件あります。遅れが大きいときは「今日から組み直す」を使ってください。` : '予定どおり進んでいます。')
         + '</div></div>';
@@ -1716,8 +1959,6 @@
       wrap.innerHTML = '<div class="hint" style="margin:0">今日の割り当てはありません。</div>';
       return;
     }
-    const key = dayKey(idx);
-    const dayProgress = state.progress[key] || {};
     let any = false;
     currentPlan.subjects.forEach((s) => {
       const items = s.plan[idx];
@@ -1739,6 +1980,7 @@
         if (Object.keys(state.progress[key]).length === 0) delete state.progress[key];
         savePlan();
         row.classList.toggle('done', e.target.checked);
+        renderToday();
       });
       row.classList.toggle('done', !!dayProgress[s.key]);
     });
@@ -1794,44 +2036,45 @@
     cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
-    ctx.fillStyle = '#f5f6fb'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#3452c4'; ctx.fillRect(0, 0, W, 300);
+    ctx.fillStyle = '#0a0c10'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#12151a'; ctx.fillRect(0, 0, W, 300);
+    ctx.fillStyle = '#39e0c9'; ctx.fillRect(0, 296, W, 4);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 40px ${SHARE_FONT}`;
-    ctx.fillText('今日のノルマ', PAD, 108);
+    ctx.fillStyle = '#39e0c9';
+    ctx.font = `700 32px ${SHARE_FONT}`;
+    ctx.fillText('今日のノルマ', PAD, 100);
+    ctx.fillStyle = '#e7e9ec';
     ctx.font = `700 76px ${SHARE_FONT}`;
-    ctx.fillText(idx >= 0 && currentPlan && idx < currentPlan.totalDays ? formatDate(dateForDayIndex(idx)) : '—', PAD, 196);
-    ctx.font = `400 34px ${SHARE_FONT}`;
-    ctx.fillStyle = 'rgba(255,255,255,.85)';
-    ctx.fillText(`${state.school || '志望校未設定'}　本番まで残り${rest}日`, PAD, 252);
+    ctx.fillText(idx >= 0 && currentPlan && idx < currentPlan.totalDays ? formatDate(dateForDayIndex(idx)) : '—', PAD, 192);
+    ctx.font = `400 32px ${SHARE_FONT}`;
+    ctx.fillStyle = '#838a95';
+    ctx.fillText(`${state.school || '志望校未設定'}　D-${rest}`, PAD, 250);
 
     let y = 386;
     wrapped.forEach((b) => {
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = '#12151a';
       const blockH = 40 + b.lines.length * 48 + 24;
       ctx.fillRect(PAD - 24, y - 48, W - (PAD - 24) * 2, blockH);
-      ctx.fillStyle = '#3452c4'; ctx.fillRect(PAD - 24, y - 48, 8, blockH);
-      ctx.fillStyle = '#24399a';
-      ctx.font = `700 34px ${SHARE_FONT}`;
+      ctx.fillStyle = '#39e0c9'; ctx.fillRect(PAD - 24, y - 48, 4, blockH);
+      ctx.font = `700 32px ${SHARE_FONT}`;
       ctx.fillText(b.label, PAD, y - 6);
-      ctx.fillStyle = '#1c2033';
-      ctx.font = `400 34px ${SHARE_FONT}`;
+      ctx.fillStyle = '#e7e9ec';
+      ctx.font = `400 32px ${SHARE_FONT}`;
       b.lines.forEach((l, i) => ctx.fillText(l, PAD, y + 44 + i * 48));
       y += blockH + 28;
     });
 
     if (!wrapped.length) {
-      ctx.fillStyle = '#6b7086';
+      ctx.fillStyle = '#838a95';
       ctx.font = `400 36px ${SHARE_FONT}`;
       ctx.fillText('今日は予備日です。遅れの取り戻しに使いましょう。', PAD, y);
       y += 60;
     }
 
-    ctx.fillStyle = '#6b7086';
-    ctx.font = `400 28px ${SHARE_FONT}`;
+    ctx.fillStyle = '#838a95';
+    ctx.font = `400 26px ${SHARE_FONT}`;
     ctx.fillText('逆算学習計画メーカー', PAD, H - 56);
-    ctx.fillText('miyu9999.github.io/study-plan-maker', PAD + 330, H - 56);
+    ctx.fillText('miyu9999.github.io/study-plan-maker', PAD + 310, H - 56);
     return cv;
   }
 
@@ -1878,36 +2121,28 @@
     alert('今日を起点に、残りの量で計画を組み直しました。');
   }
 
+  function renderResultScreen(plan) {
+    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
+    $('result-school').textContent = state.school || '志望校未入力';
+    $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
+    renderVerdict(plan);
+    renderBookList(plan);
+    renderCalendar(plan);
+  }
+
   function generate() {
     if (!state.planStart) state.planStart = todayStr();
     if (!state.examDateAbs) state.examDateAbs = resolveExamDate();
     const plan = buildPlan();
     currentPlan = plan;
     savePlan();
-    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
-    $('result-school').textContent = state.school ? state.school : '志望校未入力';
-    $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
-
-    renderVerdict(plan);
-    renderBookList(plan);
-    renderCalendar(plan);
+    renderResultScreen(plan);
     showScreen('screen-result');
   }
 
-  $('btn-to-books').addEventListener('click', () => {
-    if (!validateInputs()) return;
-    // 作り直しなので起点日・進捗はリセットする
-    state.planStart = null; state.examDateAbs = null; state.progress = {}; state.doneMap = {};
-    state.bookSelection = buildCandidateBooks();
-    renderBookEditor();
-    showScreen('screen-books');
-  });
   $('btn-view-plan').addEventListener('click', () => {
     const plan = currentPlan || buildPlan();
-    const levelLabelText = state.levelMode === 'hensachi' ? `偏差値${plan.overallScore}` : CATEGORY_LABEL[state.overallCategory];
-    $('result-school').textContent = state.school || '志望校未入力';
-    $('result-meta').textContent = `志望校偏差値${state.schoolHensachi}・現在${levelLabelText}・本番まで${plan.totalDays}日`;
-    renderVerdict(plan); renderBookList(plan); renderCalendar(plan);
+    renderResultScreen(plan);
     showScreen('screen-result');
   });
   $('btn-share').addEventListener('click', shareToday);
@@ -1916,12 +2151,12 @@
     if (!confirm('今の計画と進捗を破棄して、条件から作り直しますか？')) return;
     clearPlan();
     state.planStart = null; state.examDateAbs = null; state.progress = {}; state.doneMap = {}; state.bookSelection = null;
+    showFormStep(0);
     showScreen('screen-form');
   });
   $('btn-generate').addEventListener('click', generate);
-  $('btn-back-form').addEventListener('click', () => showScreen('screen-form'));
+  $('btn-back-form').addEventListener('click', () => { showFormStep(0); showScreen('screen-form'); });
   $('btn-back-books').addEventListener('click', () => showScreen('screen-books'));
-  $('btn-edit').addEventListener('click', () => showScreen('screen-form'));
   $('btn-to-today').addEventListener('click', () => { renderToday(); showScreen('screen-today'); });
 
   if ('serviceWorker' in navigator) {
@@ -1929,6 +2164,7 @@
   }
 
   // 保存済みの計画があれば「今日やること」から始める
+  showFormStep(0);
   if (loadPlan()) {
     renderSubjectList();
     renderPaceList();
