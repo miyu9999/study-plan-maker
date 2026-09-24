@@ -73,6 +73,7 @@
   .hensachi-input { width: 72px !important; text-align: center; padding: 8px !important; flex: none; }
   .social-type-select { width: auto !important; padding: 8px 10px !important; font-size: .8rem !important; flex: none; }
   .scope-select { width: auto !important; padding: 8px 6px !important; font-size: .76rem !important; flex: none; }
+  .rika-select { width: auto !important; padding: 8px 6px !important; font-size: .76rem !important; flex: none; }
   .scope-fixed { font-size: .74rem; color: var(--text-sub); white-space: nowrap; }
   .level-seg { flex: 1; min-width: 180px; }
   .level-seg button { padding: 8px 4px; font-size: .78rem; }
@@ -337,7 +338,8 @@
     levelMode: 'hensachi',
     overallHensachi: null,
     overallCategory: 'blank',
-    subjectIncluded: { english: true, math: true, bio: false, chem: false, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false, bio_basic: false, chem_basic: false, phys_basic: false, earth_basic: false },
+    subjectIncluded: { english: true, math: true, bio: false, chem: false, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false, rika_basic: false },
+    rikaBasicTypes: ['bio_basic', 'chem_basic'], // 理科基礎で選ぶ2科目
     // 科目ごとの到達目標：'secondary'＝2次試験まで／'common'＝共通テストまで
     subjectScope: {},
     socialType: 'geography',
@@ -362,11 +364,8 @@
     kobun:     { label: '古文',   required: false, generalOnly: true },
     kanbun:    { label: '漢文',   required: false, generalOnly: true },
     social:    { label: '社会',   required: false, generalOnly: true },
-    // 理科基礎（共通テスト専用。国公立文系が2科目選択する）
-    bio_basic:   { label: '生物基礎', required: false, generalOnly: true, commonOnly: true },
-    chem_basic:  { label: '化学基礎', required: false, generalOnly: true, commonOnly: true },
-    phys_basic:  { label: '物理基礎', required: false, generalOnly: true, commonOnly: true },
-    earth_basic: { label: '地学基礎', required: false, generalOnly: true, commonOnly: true },
+    // 理科基礎：共通テスト専用。4科目から2科目を選ぶ（2科目で1つの試験科目）
+    rika_basic: { label: '理科基礎', required: false, generalOnly: true, commonOnly: true },
   };
 
   // ═══════════════════════════════════════════════════════════
@@ -462,6 +461,16 @@
       { title: '最短10時間で9割とれる 共通テスト漢文のスゴ技', units: 10, unitLabel: '講', min: 35, band: 2, track: 'main' },
       { title: 'マーク式基礎問題集 漢文', units: 15, unitLabel: '題', min: 30, band: 2, track: 'main' },
     ],
+  };
+
+  // 理科基礎：共通テストで4科目から2科目を選択する（2科目あわせて1つの試験科目）
+  const RIKA_BASIC_LABEL = {
+    bio_basic: '生物基礎',
+    chem_basic: '化学基礎',
+    phys_basic: '物理基礎',
+    earth_basic: '地学基礎',
+  };
+  const RIKA_BASIC_BOOK_DB = {
     bio_basic: [
       { title: '生物基礎の点数が面白いほどとれる本', units: 20, unitLabel: '講', min: 25, band: 0, track: 'main' },
       { title: '短期攻略 大学入学共通テスト 生物基礎', units: 30, unitLabel: '回', min: 20, band: 1, track: 'main' },
@@ -658,8 +667,15 @@
     return scopeFor(key) === 'common' ? Math.min(base, COMMON_TEST_MAX_BAND) : base;
   }
 
+  function bookDbFor(key) {
+    if (key === 'social') return SOCIAL_BOOK_DB[state.socialType];
+    // 理科基礎は選択した2科目の教材をまとめて1科目として扱う
+    if (key === 'rika_basic') return state.rikaBasicTypes.flatMap((t) => RIKA_BASIC_BOOK_DB[t] || []);
+    return BOOK_DB[key];
+  }
+
   function booksForSubject(key, absScore) {
-    const db = key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[key];
+    const db = bookDbFor(key);
     if (!db) return [];
     const startBand = startBandFromAbsScore(absScore);
     const maxBandInDb = Math.max(...db.map((b) => b.band));
@@ -862,7 +878,9 @@
   }
 
   function subjectLabelFor(k) {
-    return k === 'social' ? `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）` : SUBJECT_META[k].label;
+    if (k === 'social') return `社会（${SOCIAL_TYPE_LABEL[state.socialType]}）`;
+    if (k === 'rika_basic') return `理科基礎（${state.rikaBasicTypes.map((t) => RIKA_BASIC_LABEL[t]).join('・')}）`;
+    return SUBJECT_META[k].label;
   }
 
   function paceFor(k) {
@@ -955,9 +973,9 @@
       if (isKokkou) {
         // 国公立文系：英・数・国が2次の主力、社会と理科基礎は共通テストまで
         picked.add('math'); picked.add('kanbun');
-        picked.add('bio_basic'); picked.add('chem_basic'); // 理科基礎2科目（変更可）
+        picked.add('rika_basic'); // 理科基礎（選ぶ2科目は画面上で変更可）
         setScope(['math', 'kanbun'], 'secondary');
-        setScope(['social', 'bio_basic', 'chem_basic'], 'common');
+        setScope(['social', 'rika_basic'], 'common');
       } else {
         // 私大文系：英・国・社の3科目がそのまま本番
         setScope(['social'], 'secondary');
@@ -1119,6 +1137,12 @@
       if (included && key === 'social') {
         controlsHtml += `<select class="social-type-select">${Object.entries(SOCIAL_TYPE_LABEL).map(([val, label]) => `<option value="${val}" ${state.socialType === val ? 'selected' : ''}>${label}</option>`).join('')}</select>`;
       }
+      if (included && key === 'rika_basic') {
+        const opts = (sel) => Object.entries(RIKA_BASIC_LABEL)
+          .map(([val, label]) => `<option value="${val}" ${sel === val ? 'selected' : ''}>${label}</option>`).join('');
+        controlsHtml += `<select class="rika-select" data-slot="0">${opts(state.rikaBasicTypes[0])}</select>`;
+        controlsHtml += `<select class="rika-select" data-slot="1">${opts(state.rikaBasicTypes[1])}</select>`;
+      }
       if (included && !meta.commonOnly) {
         const sc = scopeFor(key);
         controlsHtml += `<select class="scope-select">
@@ -1147,6 +1171,20 @@
       if (socialTypeEl) socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
       const scopeEl = row.querySelector('.scope-select');
       if (scopeEl) scopeEl.addEventListener('change', (e) => { state.subjectScope[key] = e.target.value; });
+      row.querySelectorAll('.rika-select').forEach((sel) => {
+        sel.addEventListener('change', (e) => {
+          const slot = parseInt(e.target.dataset.slot, 10);
+          const other = state.rikaBasicTypes[1 - slot];
+          // 同じ科目を2つ選べないようにする（選んだら相手側を空いている科目にずらす）
+          if (e.target.value === other) {
+            const free = Object.keys(RIKA_BASIC_LABEL).find((t) => t !== e.target.value);
+            state.rikaBasicTypes[1 - slot] = free;
+          }
+          state.rikaBasicTypes[slot] = e.target.value;
+          renderSubjectList();
+          renderPaceList();
+        });
+      });
       const hensachiEl = row.querySelector('.hensachi-input');
       if (hensachiEl) hensachiEl.addEventListener('input', (e) => {
         state.subjectHensachi[key] = e.target.value === '' ? null : parseFloat(e.target.value);
