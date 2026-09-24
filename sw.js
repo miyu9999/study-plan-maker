@@ -1,4 +1,4 @@
-const CACHE_NAME = 'study-plan-maker-v1';
+const CACHE_NAME = 'study-plan-maker-v2';
 const APP_SHELL = ['./', './index.html', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
