@@ -1672,15 +1672,35 @@
       : idx >= total ? '本番おつかれさまでした' : formatDate(dateForDayIndex(idx));
     $('today-meta').textContent = `本番まで残り${rest}日（${state.examDateAbs}）`;
 
-    // 進捗サマリ
-    const doneDays = Object.keys(state.progress).length;
-    const pastDays = clamp(idx + 1, 0, total);
-    const pct = pastDays > 0 ? Math.round((doneDays / pastDays) * 100) : 0;
-    $('today-progress').innerHTML = `
-      <div class="verdict ${pct >= 80 ? 'ok' : pct >= 50 ? 'tight' : 'ng'}">
-        <div class="v-title">消化率 ${pct}%</div>
-        <div class="v-body">これまでの${pastDays}日のうち${doneDays}日ぶんを消化しています。</div>
-      </div>`;
+    // 進捗サマリ：今日より前に割り当てられたタスク（科目×日）のうち、何件を消化したかで見る。
+    // 今日の分はまだ未着手が当たり前なので分母に入れない
+    let doneTasks = 0;
+    let dueTasks = 0;
+    const lastDay = Math.min(idx, total);
+    for (let d = 0; d < lastDay; d++) {
+      const prog = state.progress[dayKey(d)] || {};
+      currentPlan.subjects.forEach((s) => {
+        if (!s.plan[d] || !s.plan[d].length) return;
+        dueTasks += 1;
+        if (prog[s.key]) doneTasks += 1;
+      });
+    }
+    const behind = dueTasks - doneTasks;
+    if (dueTasks === 0) {
+      $('today-progress').innerHTML = `
+        <div class="verdict ok">
+          <div class="v-title">今日からスタートです</div>
+          <div class="v-body">下のタスクを終えたらチェックを入れてください。</div>
+        </div>`;
+    } else {
+      const pct = Math.round((doneTasks / dueTasks) * 100);
+      $('today-progress').innerHTML = `
+        <div class="verdict ${pct >= 80 ? 'ok' : pct >= 50 ? 'tight' : 'ng'}">
+          <div class="v-title">消化率 ${pct}%</div>
+          <div class="v-body">昨日までに割り当てられた${dueTasks}件のうち${doneTasks}件を消化しています。`
+        + (behind > 0 ? `未消化が${behind}件あります。遅れが大きいときは「今日から組み直す」を使ってください。` : '予定どおり進んでいます。')
+        + '</div></div>';
+    }
 
     const wrap = $('today-tasks');
     wrap.innerHTML = '';
