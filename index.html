@@ -72,6 +72,8 @@
   .include-toggle input { width: 16px; height: 16px; }
   .hensachi-input { width: 72px !important; text-align: center; padding: 8px !important; flex: none; }
   .social-type-select { width: auto !important; padding: 8px 10px !important; font-size: .8rem !important; flex: none; }
+  .scope-select { width: auto !important; padding: 8px 6px !important; font-size: .76rem !important; flex: none; }
+  .scope-fixed { font-size: .74rem; color: var(--text-sub); white-space: nowrap; }
   .level-seg { flex: 1; min-width: 180px; }
   .level-seg button { padding: 8px 4px; font-size: .78rem; }
 
@@ -335,7 +337,9 @@
     levelMode: 'hensachi',
     overallHensachi: null,
     overallCategory: 'blank',
-    subjectIncluded: { english: true, math: true, bio: false, chem: false, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false },
+    subjectIncluded: { english: true, math: true, bio: false, chem: false, phys: false, gendaibun: false, kobun: false, kanbun: false, social: false, bio_basic: false, chem_basic: false, phys_basic: false, earth_basic: false },
+    // 科目ごとの到達目標：'secondary'＝2次試験まで／'common'＝共通テストまで
+    subjectScope: {},
     socialType: 'geography',
     subjectHensachi: { english: null, math: null, bio: null, chem: null, phys: null, gendaibun: null, kobun: null, kanbun: null, social: null },
     subjectCategory: { english: 'normal', math: 'normal', bio: 'normal', chem: 'normal', phys: 'normal', gendaibun: 'normal', kobun: 'normal', kanbun: 'normal', social: 'normal' },
@@ -358,6 +362,11 @@
     kobun:     { label: '古文',   required: false, generalOnly: true },
     kanbun:    { label: '漢文',   required: false, generalOnly: true },
     social:    { label: '社会',   required: false, generalOnly: true },
+    // 理科基礎（共通テスト専用。国公立文系が2科目選択する）
+    bio_basic:   { label: '生物基礎', required: false, generalOnly: true, commonOnly: true },
+    chem_basic:  { label: '化学基礎', required: false, generalOnly: true, commonOnly: true },
+    phys_basic:  { label: '物理基礎', required: false, generalOnly: true, commonOnly: true },
+    earth_basic: { label: '地学基礎', required: false, generalOnly: true, commonOnly: true },
   };
 
   // ═══════════════════════════════════════════════════════════
@@ -452,6 +461,22 @@
       { title: 'ステップアップノート10 漢文句形ドリルと演習', units: 30, unitLabel: '項目', min: 20, band: 1, track: 'main' },
       { title: '最短10時間で9割とれる 共通テスト漢文のスゴ技', units: 10, unitLabel: '講', min: 35, band: 2, track: 'main' },
       { title: 'マーク式基礎問題集 漢文', units: 15, unitLabel: '題', min: 30, band: 2, track: 'main' },
+    ],
+    bio_basic: [
+      { title: '生物基礎の点数が面白いほどとれる本', units: 20, unitLabel: '講', min: 25, band: 0, track: 'main' },
+      { title: '短期攻略 大学入学共通テスト 生物基礎', units: 30, unitLabel: '回', min: 20, band: 1, track: 'main' },
+    ],
+    chem_basic: [
+      { title: '化学基礎の点数が面白いほどとれる本', units: 18, unitLabel: '講', min: 25, band: 0, track: 'main' },
+      { title: '短期攻略 大学入学共通テスト 化学基礎', units: 30, unitLabel: '回', min: 20, band: 1, track: 'main' },
+    ],
+    phys_basic: [
+      { title: '物理基礎の点数が面白いほどとれる本', units: 16, unitLabel: '講', min: 25, band: 0, track: 'main' },
+      { title: '短期攻略 大学入学共通テスト 物理基礎', units: 30, unitLabel: '回', min: 20, band: 1, track: 'main' },
+    ],
+    earth_basic: [
+      { title: '地学基礎の点数が面白いほどとれる本', units: 16, unitLabel: '講', min: 25, band: 0, track: 'main' },
+      { title: '短期攻略 大学入学共通テスト 地学基礎', units: 30, unitLabel: '回', min: 20, band: 1, track: 'main' },
     ],
   };
 
@@ -573,8 +598,11 @@
     ],
   };
 
-  // 仕上げは志望校の過去問演習。直前期に全科目まとめて充てる
-  function pastExamBook(subjectLabel) {
+  // 仕上げの過去問演習。直前期に全科目まとめて充てる（共テのみの科目は共通テストの過去問・予想問題）
+  function pastExamBook(subjectLabel, scope) {
+    if (scope === 'common') {
+      return { title: `共通テスト過去問・予想問題（${subjectLabel}）`, units: 10, unitLabel: '回', min: 60, band: 3, track: 'main', isPastExam: true };
+    }
     return { title: `志望校の過去問演習（${subjectLabel}）`, units: 10, unitLabel: '年分', min: 90, band: 3, track: 'main', isPastExam: true };
   }
 
@@ -618,12 +646,24 @@
     return 3;
   }
 
+  // 共通テストまでの科目は、2次試験レベル（発展）の教材までは積まない
+  const COMMON_TEST_MAX_BAND = 2;
+  function scopeFor(key) {
+    if (SUBJECT_META[key] && SUBJECT_META[key].commonOnly) return 'common';
+    return state.subjectScope[key] || 'secondary';
+  }
+
+  function targetBandFor(key) {
+    const base = targetBandFromSchoolHensachi(state.schoolHensachi);
+    return scopeFor(key) === 'common' ? Math.min(base, COMMON_TEST_MAX_BAND) : base;
+  }
+
   function booksForSubject(key, absScore) {
     const db = key === 'social' ? SOCIAL_BOOK_DB[state.socialType] : BOOK_DB[key];
     if (!db) return [];
     const startBand = startBandFromAbsScore(absScore);
     const maxBandInDb = Math.max(...db.map((b) => b.band));
-    const targetBand = Math.min(targetBandFromSchoolHensachi(state.schoolHensachi), maxBandInDb);
+    const targetBand = Math.min(targetBandFor(key), maxBandInDb);
     const picked = db.filter((b) => b.band >= startBand && b.band <= targetBand);
     // 既にターゲットを超えている科目でも、仕上げ用に最低1冊は残す
     if (picked.length === 0) {
@@ -785,10 +825,10 @@
   //   暗記系（単語帳・用語集）＝全期間にわたって毎日並行
   //   メインライン（文法→解釈→長文、講義→演習）＝順番に1冊ずつ
   //   直前期は全科目まとめて志望校の過去問演習
-  function buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, subjectLabel) {
+  function buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, subjectLabel, scope) {
     const memorize = expandCycles(picked.filter((b) => b.track === 'memorize'));
     const main = expandCycles(picked.filter((b) => b.track !== 'memorize'));
-    const pastExam = expandCycles([pastExamBook(subjectLabel)]);
+    const pastExam = expandCycles([pastExamBook(subjectLabel, scope)]);
 
     const plan = Array.from({ length: totalDays }, () => []);
     const spans = [];
@@ -838,6 +878,7 @@
       out[k] = {
         label: subjectLabelFor(k),
         abs,
+        scope: scopeFor(k),
         books: booksForSubject(k, abs).map((b) => ({ ...b, enabled: true })),
       };
     });
@@ -855,8 +896,9 @@
       const entry = selection[k];
       const picked = entry.books.filter((b) => b.enabled);
       const pace = paceFor(k);
-      const schedule = buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, entry.label);
-      return { key: k, label: entry.label, abs: entry.abs, pace, ...schedule };
+      const scope = entry.scope || scopeFor(k);
+      const schedule = buildSubjectSchedule(picked, pace, studyDays, pastExamDays, totalDays, entry.label, scope);
+      return { key: k, label: entry.label, abs: entry.abs, scope, pace, ...schedule };
     });
 
     // 1日ごとの負荷（分）
@@ -903,29 +945,49 @@
     const cat = facultyCategory(fac);
     const picked = new Set(['english']);
 
+    // 到達目標（2次試験まで／共通テストまで）も同時に決める
+    const scope = {};
+    const setScope = (keys, v) => keys.forEach((k) => { scope[k] = v; });
+
     if (cat === 'humanities') {
-      picked.add('gendaibun');
-      picked.add('kobun');
-      picked.add('social');
-      if (isKokkou) { picked.add('math'); picked.add('kanbun'); }
-    } else {
-      // 理系・医学科
-      picked.add('math');
-      scienceSubjectsFor(fac).forEach((k) => picked.add(k));
+      picked.add('gendaibun'); picked.add('kobun'); picked.add('social');
+      setScope(['english', 'gendaibun', 'kobun'], 'secondary');
       if (isKokkou) {
-        // 国公立は共通テストで国語・社会も必要
+        // 国公立文系：英・数・国が2次の主力、社会と理科基礎は共通テストまで
+        picked.add('math'); picked.add('kanbun');
+        picked.add('bio_basic'); picked.add('chem_basic'); // 理科基礎2科目（変更可）
+        setScope(['math', 'kanbun'], 'secondary');
+        setScope(['social', 'bio_basic', 'chem_basic'], 'common');
+      } else {
+        // 私大文系：英・国・社の3科目がそのまま本番
+        setScope(['social'], 'secondary');
+      }
+    } else {
+      // 理系・医獣医系：英・数・理科が2次の主力
+      picked.add('math');
+      const sciences = scienceSubjectsFor(fac);
+      sciences.forEach((k) => picked.add(k));
+      setScope(['english', 'math', ...sciences], 'secondary');
+      if (isKokkou) {
+        // 国公立理系：国語・社会は共通テストまで
         picked.add('gendaibun'); picked.add('kobun'); picked.add('kanbun'); picked.add('social');
+        setScope(['gendaibun', 'kobun', 'kanbun', 'social'], 'common');
       }
     }
 
     Object.keys(state.subjectIncluded).forEach((k) => { state.subjectIncluded[k] = picked.has(k); });
+    state.subjectScope = scope;
     // 理系は共通テストの社会で地理を選ぶ人が多い。文系は日本史を初期値に
     state.socialType = cat === 'humanities' ? 'japanese_history' : 'geography';
 
     const kindLabel = cat === 'medical' ? '医・獣医系' : cat === 'science' ? '理系' : '文系';
+    const commonList = Object.keys(scope).filter((k) => scope[k] === 'common').map((k) => subjectLabelFor(k));
     $('subject-auto-note').innerHTML =
       `<b>${uni} ${fac}</b>（${isKokkou ? '国公立' : '私立'}・${kindLabel}）の一般的な受験科目から自動で選びました。`
-      + '<br>入試方式によって科目は変わります。<b>必ず募集要項で確認し、必要ならここで変更してください。</b>';
+      + (commonList.length
+        ? `<br>${commonList.join('・')} は<b>共通テストまで</b>、それ以外は<b>2次試験まで</b>を到達目標にしています（参考書のレベルが変わります）。`
+        : '')
+      + '<br>入試方式によって科目・配点は変わります。<b>必ず募集要項で確認し、必要ならここで変更してください。</b>';
     $('subject-auto-note').classList.remove('hidden');
     renderSubjectList();
     renderPaceList();
@@ -1057,6 +1119,15 @@
       if (included && key === 'social') {
         controlsHtml += `<select class="social-type-select">${Object.entries(SOCIAL_TYPE_LABEL).map(([val, label]) => `<option value="${val}" ${state.socialType === val ? 'selected' : ''}>${label}</option>`).join('')}</select>`;
       }
+      if (included && !meta.commonOnly) {
+        const sc = scopeFor(key);
+        controlsHtml += `<select class="scope-select">
+          <option value="secondary" ${sc === 'secondary' ? 'selected' : ''}>2次まで</option>
+          <option value="common" ${sc === 'common' ? 'selected' : ''}>共テまで</option>
+        </select>`;
+      } else if (included && meta.commonOnly) {
+        controlsHtml += '<span class="scope-fixed">共テのみ</span>';
+      }
       if (included) {
         if (state.levelMode === 'hensachi') {
           const v = state.subjectHensachi[key];
@@ -1074,6 +1145,8 @@
       if (checkEl) checkEl.addEventListener('change', (e) => { state.subjectIncluded[key] = e.target.checked; renderSubjectList(); renderPaceList(); });
       const socialTypeEl = row.querySelector('.social-type-select');
       if (socialTypeEl) socialTypeEl.addEventListener('change', (e) => { state.socialType = e.target.value; });
+      const scopeEl = row.querySelector('.scope-select');
+      if (scopeEl) scopeEl.addEventListener('change', (e) => { state.subjectScope[key] = e.target.value; });
       const hensachiEl = row.querySelector('.hensachi-input');
       if (hensachiEl) hensachiEl.addEventListener('input', (e) => {
         state.subjectHensachi[key] = e.target.value === '' ? null : parseFloat(e.target.value);
@@ -1109,7 +1182,7 @@
       card.innerHTML = `
         <div class="sb-head">
           <span class="sb-name">${entry.label}</span>
-          <span class="sb-meta">偏差値${Math.round(entry.abs)}相当</span>
+          <span class="sb-meta">偏差値${Math.round(entry.abs)}相当 / ${entry.scope === 'common' ? '共通テストまで' : '2次試験まで'}</span>
         </div>
         <div class="editor-books"></div>
         <button type="button" class="add-book-btn">＋ 参考書を追加</button>
@@ -1236,7 +1309,7 @@
       block.innerHTML = `
         <div class="sb-head">
           <span class="sb-name">${s.label}</span>
-          <span class="sb-meta">偏差値${Math.round(s.abs)}相当 / ${bookCount}冊 / 計${subjTotalHours}時間</span>
+          <span class="sb-meta">${s.scope === 'common' ? '共テまで' : '2次まで'} / 偏差値${Math.round(s.abs)}相当 / ${bookCount}冊 / 計${subjTotalHours}時間</span>
         </div>`;
 
       const groups = [
