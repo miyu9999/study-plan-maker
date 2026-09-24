@@ -1,6 +1,6 @@
 {
-  "name": "逆算学習計画メーカー",
-  "short_name": "逆算計画",
+  "name": "わりカレ",
+  "short_name": "わりカレ",
   "description": "志望校・残り期間・模試の偏差値から、やるべき参考書と本番までの日毎の計画を逆算します。",
   "start_url": "./index.html",
   "scope": "./",
