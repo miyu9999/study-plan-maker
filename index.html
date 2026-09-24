@@ -150,6 +150,11 @@
   /* 週の進め方 */
   .pace-input { width: 46px !important; padding: 6px !important; text-align: center; margin: 0 4px; }
 
+  .auto-note {
+    background: var(--primary-light); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 13px; font-size: .78rem; line-height: 1.7; color: var(--primary-dark); margin-bottom: 14px;
+  }
+
   /* 参考書リスト編集 */
   .editor-line { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px dashed var(--border); }
   .editor-line:last-child { border-bottom: 0; }
@@ -262,6 +267,7 @@
 
     <div class="card">
       <h2>4. 科目ごとの学力</h2>
+      <div class="auto-note hidden" id="subject-auto-note"></div>
       <div class="hint" style="margin-top:0;margin-bottom:14px" id="subject-mode-hint"></div>
       <div id="subject-list"></div>
       <div class="hint">「含める」を外した科目は計画から外れます。現代文・古文・漢文・社会は共通テスト対策用です。</div>
@@ -503,6 +509,27 @@
     '甲南大学': { '文学部': 52.5, '法学部': 52.5, '経済学部': 52.5, '経営学部': 52.5, '理工学部': 50 },
     '龍谷大学': { '文学部': 52.5, '法学部': 50, '経済学部': 50, '経営学部': 50, '社会学部': 50, '先端理工学部': 47.5 },
   };
+
+  // 国公立大学（共通テストで5教科が必要になるため、私立と受験科目の初期値が変わる）
+  const KOKKOURITSU = new Set([
+    '東京大学', '京都大学', '一橋大学', '東京科学大学', '大阪大学', '名古屋大学', '東北大学', '九州大学',
+    '北海道大学', '神戸大学', '筑波大学', '千葉大学', '横浜国立大学', '大阪公立大学', '東京都立大学',
+    '広島大学', '岡山大学', '金沢大学', '熊本大学', '新潟大学', 'お茶の水女子大学',
+  ]);
+
+  // 学部名から系統を判定する（受験科目の初期値を決めるためのざっくり分類）
+  function facultyCategory(fac) {
+    if (/医学科|医学類|（医）|獣医/.test(fac)) return 'medical';
+    if (/社会|文学|文教育|文化|法学|法政経|経済|商学|経営|教育|外国語|国際|政策|人文|人間社会|神道|神学|グローバル|メディア|総合人間|情報コミュニケーション|人間科学|スポーツ|文芸|生活科学|第一部/.test(fac)) return 'humanities';
+    if (/理|工|農|薬|歯|情報|システム|生命|環境|都市|創域|先進|物質|デザイン|園芸|看護|技術/.test(fac)) return 'science';
+    return 'humanities';
+  }
+
+  // 理科2科目の初期値：工学系は化学＋物理、医薬農看護系は化学＋生物が一般的
+  function scienceSubjectsFor(fac) {
+    if (/医|薬|農|看護|生命|園芸|獣医|生物/.test(fac)) return ['chem', 'bio'];
+    return ['chem', 'phys'];
+  }
 
   const SOCIAL_TYPE_LABEL = {
     geography: '地理',
@@ -869,6 +896,41 @@
     state.schoolHensachi = e.target.value === '' ? 60 : parseFloat(e.target.value);
   });
 
+  // 志望校から一般的な受験科目を判定し、対象科目のチェックを自動で入れる。
+  // 受験科目は入試方式によって変わるため、あくまで初期値（画面上で自由に変更できる）
+  function autoSelectSubjects(uni, fac) {
+    const isKokkou = KOKKOURITSU.has(uni);
+    const cat = facultyCategory(fac);
+    const picked = new Set(['english']);
+
+    if (cat === 'humanities') {
+      picked.add('gendaibun');
+      picked.add('kobun');
+      picked.add('social');
+      if (isKokkou) { picked.add('math'); picked.add('kanbun'); }
+    } else {
+      // 理系・医学科
+      picked.add('math');
+      scienceSubjectsFor(fac).forEach((k) => picked.add(k));
+      if (isKokkou) {
+        // 国公立は共通テストで国語・社会も必要
+        picked.add('gendaibun'); picked.add('kobun'); picked.add('kanbun'); picked.add('social');
+      }
+    }
+
+    Object.keys(state.subjectIncluded).forEach((k) => { state.subjectIncluded[k] = picked.has(k); });
+    // 理系は共通テストの社会で地理を選ぶ人が多い。文系は日本史を初期値に
+    state.socialType = cat === 'humanities' ? 'japanese_history' : 'geography';
+
+    const kindLabel = cat === 'medical' ? '医・獣医系' : cat === 'science' ? '理系' : '文系';
+    $('subject-auto-note').innerHTML =
+      `<b>${uni} ${fac}</b>（${isKokkou ? '国公立' : '私立'}・${kindLabel}）の一般的な受験科目から自動で選びました。`
+      + '<br>入試方式によって科目は変わります。<b>必ず募集要項で確認し、必要ならここで変更してください。</b>';
+    $('subject-auto-note').classList.remove('hidden');
+    renderSubjectList();
+    renderPaceList();
+  }
+
   // 大学・学部を選ぶと偏差値が自動で入る（入った後も手で書き換えられる）
   function renderSchoolSelects() {
     const uniSel = $('school-uni-select');
@@ -895,6 +957,7 @@
       state.school = `${uni} ${fac}`;
       state.schoolHensachi = h;
       $('school-hensachi-input').value = h;
+      autoSelectSubjects(uni, fac);
     };
     uniSel.addEventListener('change', syncFaculty);
     facSel.addEventListener('change', applySchoolSelection);
