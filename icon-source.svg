@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#3452c4"/>
+  <!-- カレンダー本体 -->
+  <rect x="106" y="126" width="300" height="290" rx="20" fill="#ffffff"/>
+  <!-- 上部バー -->
+  <path d="M106 146 a20 20 0 0 1 20-20 h260 a20 20 0 0 1 20 20 v40 h-300 z" fill="#24399a"/>
+  <rect x="160" y="96" width="26" height="60" rx="13" fill="#24399a"/>
+  <rect x="326" y="96" width="26" height="60" rx="13" fill="#24399a"/>
+  <!-- 予定バー（逆算していく計画を表現：だんだん短くなる） -->
+  <rect x="146" y="226" width="150" height="22" rx="11" fill="#c9d3f5"/>
+  <rect x="146" y="276" width="110" height="22" rx="11" fill="#c9d3f5"/>
+  <rect x="146" y="326" width="70" height="22" rx="11" fill="#c9d3f5"/>
+  <!-- 完了チェック -->
+  <circle cx="330" cy="330" r="62" fill="#3452c4"/>
+  <path d="M300 330 l22 24 l44 -52" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

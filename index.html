@@ -4,6 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>逆算学習計画メーカー（仮）</title>
+<meta name="theme-color" content="#3452c4" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon-32.png" sizes="32x32" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <style>
   :root {
     --primary: #3452c4;
@@ -1808,6 +1815,10 @@
   $('btn-back-books').addEventListener('click', () => showScreen('screen-books'));
   $('btn-edit').addEventListener('click', () => showScreen('screen-form'));
   $('btn-to-today').addEventListener('click', () => { renderToday(); showScreen('screen-today'); });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  }
 
   // 保存済みの計画があれば「今日やること」から始める
   if (loadPlan()) {
