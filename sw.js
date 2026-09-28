@@ -1,14 +1,16 @@
-const CACHE_NAME = 'study-plan-maker-v3';
-const APP_SHELL = ['./', './index.html', './icon-192.png', './icon-512.png'];
+const CACHE_PREFIX = 'study-plan-maker-';
+const CACHE_NAME = CACHE_PREFIX + 'v4';
+const APP_SHELL = ['./', './index.html', './engine.js', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
+// 同じドメインに他のアプリも載るので、自分のキャッシュだけを消す
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
