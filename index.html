@@ -4,29 +4,29 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>わりカレ</title>
-<meta name="theme-color" content="#0a0c10" />
+<meta name="theme-color" content="#faf9f7" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="favicon-32.png" sizes="32x32" />
 <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
 <style>
   :root {
-    --bg: #0a0c10;
-    --panel: #12151a;
-    --panel2: #171b22;
-    --line: rgba(255,255,255,.14);
-    --text: #e7e9ec;
-    --text-dim: #838a95;
-    --accent: #39e0c9;
-    --accent-ink: #06322c;
-    --ok: #4ade80;
-    --tight: #f5b942;
-    --ng: #ff5f5f;
+    --bg: #faf9f7;
+    --panel: #ffffff;
+    --panel2: #f3f1ec;
+    --line: rgba(28,26,23,.14);
+    --text: #1c1a17;
+    --text-dim: #726c62;
+    --accent: #ff6a3d;
+    --accent-ink: #fff8f4;
+    --ok: #16a34a;
+    --tight: #b45309;
+    --ng: #dc2626;
     --mono: 'JetBrains Mono', ui-monospace, monospace;
     --display: 'Big Shoulders Display', sans-serif;
   }
@@ -37,7 +37,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 1px, transparent 3px);
+    background-image: repeating-linear-gradient(0deg, rgba(28,26,23,.025) 0px, rgba(28,26,23,.025) 1px, transparent 1px, transparent 3px);
   }
   input[type=checkbox] { accent-color: var(--accent); width: 18px; height: 18px; }
   ::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
@@ -1846,42 +1846,42 @@
     cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
-    ctx.fillStyle = '#0a0c10'; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#12151a'; ctx.fillRect(0, 0, W, 300);
-    ctx.fillStyle = '#39e0c9'; ctx.fillRect(0, 296, W, 4);
+    ctx.fillStyle = '#faf9f7'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, 300);
+    ctx.fillStyle = '#ff6a3d'; ctx.fillRect(0, 296, W, 4);
 
-    ctx.fillStyle = '#39e0c9';
+    ctx.fillStyle = '#ff6a3d';
     ctx.font = `700 32px ${SHARE_FONT}`;
     ctx.fillText('今日のノルマ', PAD, 100);
-    ctx.fillStyle = '#e7e9ec';
+    ctx.fillStyle = '#1c1a17';
     ctx.font = `700 76px ${SHARE_FONT}`;
     ctx.fillText(idx >= 0 && currentPlan && idx < currentPlan.totalDays ? formatDate(dateForDayIndex(idx)) : '—', PAD, 192);
     ctx.font = `400 32px ${SHARE_FONT}`;
-    ctx.fillStyle = '#838a95';
+    ctx.fillStyle = '#726c62';
     ctx.fillText(`${state.school || '志望校未設定'}　D-${rest}`, PAD, 250);
 
     let y = 386;
     wrapped.forEach((b) => {
-      ctx.fillStyle = '#12151a';
+      ctx.fillStyle = '#f3f1ec';
       const blockH = 40 + b.lines.length * 48 + 24;
       ctx.fillRect(PAD - 24, y - 48, W - (PAD - 24) * 2, blockH);
-      ctx.fillStyle = '#39e0c9'; ctx.fillRect(PAD - 24, y - 48, 4, blockH);
+      ctx.fillStyle = '#ff6a3d'; ctx.fillRect(PAD - 24, y - 48, 4, blockH);
       ctx.font = `700 32px ${SHARE_FONT}`;
       ctx.fillText(b.label, PAD, y - 6);
-      ctx.fillStyle = '#e7e9ec';
+      ctx.fillStyle = '#1c1a17';
       ctx.font = `400 32px ${SHARE_FONT}`;
       b.lines.forEach((l, i) => ctx.fillText(l, PAD, y + 44 + i * 48));
       y += blockH + 28;
     });
 
     if (!wrapped.length) {
-      ctx.fillStyle = '#838a95';
+      ctx.fillStyle = '#726c62';
       ctx.font = `400 36px ${SHARE_FONT}`;
       ctx.fillText('今日は予備日です。遅れの取り戻しに使いましょう。', PAD, y);
       y += 60;
     }
 
-    ctx.fillStyle = '#838a95';
+    ctx.fillStyle = '#726c62';
     ctx.font = `400 26px ${SHARE_FONT}`;
     ctx.fillText('わりカレ', PAD, H - 56);
     ctx.fillText('miyu9999.github.io/study-plan-maker', PAD + 310, H - 56);

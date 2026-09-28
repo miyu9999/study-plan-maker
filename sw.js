@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'study-plan-maker-';
-const CACHE_NAME = CACHE_PREFIX + 'v4';
+const CACHE_NAME = CACHE_PREFIX + 'v5';
 const APP_SHELL = ['./', './index.html', './engine.js', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
