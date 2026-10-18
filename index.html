@@ -309,6 +309,17 @@
   .empty-state .es-title { font-family: var(--display); font-size: 18px; color: var(--text); margin-bottom: 8px; }
   .empty-state .es-body { font-size: 12px; line-height: 1.7; margin-bottom: 20px; }
 </style>
+<script>
+(function(){
+  try {
+    var seen = localStorage.getItem('miyu_visited_warikare');
+    window.goatcounter = {
+      path: seen ? '/returning-visit-warikare' : (location.pathname + location.search)
+    };
+    if (!seen) localStorage.setItem('miyu_visited_warikare', '1');
+  } catch (e) {}
+})();
+</script>
 <script data-goatcounter="https://miyu9999.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </head>
@@ -469,6 +480,7 @@
 
     <button class="btn-primary" id="btn-to-today" style="margin-top:16px">BACK_TO_TODAY</button>
     <button class="btn-secondary" id="btn-back-books">参考書を選び直す</button>
+    <a class="btn-link" id="feedback-link" href="#" target="_blank" rel="noopener">使ってみた感想を教えてください（任意・1分）</a>
   </section>
 </main>
 
@@ -495,6 +507,11 @@
 
 <script src="engine.js"></script>
 <script>
+  // ═══════════════════════════════════════════════════════════
+  // 設定（フォームURLが決まったらここだけ差し替える）
+  // ═══════════════════════════════════════════════════════════
+  const FEEDBACK_FORM_URL = 'https://forms.gle/GM5it8AU7p5H1KSd9';
+
   // ═══════════════════════════════════════════════════════════
   // 状態
   // ═══════════════════════════════════════════════════════════
@@ -1968,6 +1985,7 @@
   $('btn-back-form').addEventListener('click', () => { showFormStep(0); showScreen('screen-form'); });
   $('btn-back-books').addEventListener('click', () => showScreen('screen-books'));
   $('btn-to-today').addEventListener('click', () => { renderToday(); showScreen('screen-today'); });
+  $('feedback-link').href = FEEDBACK_FORM_URL;
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
